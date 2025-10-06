@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "types": ["node"],
+    "lib": ["esnext"],
+    "incremental": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true
+  },
+  "include": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts", "**/*.js", "**/*.cjs", "**/*.mjs"],
+  "exclude": ["node_modules", "coverage"]
+}

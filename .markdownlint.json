@@ -1,0 +1,7 @@
+{
+	"$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json",
+	"first-line-h1": false,
+	"no-hard-tabs": false,
+	"no-inline-html": false,
+	"line-length": false
+}

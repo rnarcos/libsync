@@ -1,0 +1,26 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "editor.snippetSuggestions": "bottom",
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  },
+  "eslint.enable": true,
+  "eslint.experimental.useFlatConfig": true,
+  "eslint.format.enable": true,
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "eslint.rules.customizations": [{ "rule": "*", "severity": "warn" }],
+  "eslint.options": {
+    "overrideConfigFile": "eslint.config.cjs"
+  }
+}

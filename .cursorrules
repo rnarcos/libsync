@@ -1,0 +1,25 @@
+# Cursor Rules for libsync
+
+## Workspace Commands
+- Always use `pnpm -F <workspace>` to run workspace-specific scripts
+- Use `pnpm` for root-level scripts that use turbo
+- Example: `pnpm -F libsync build` instead of `cd packages/cli && pnpm build`
+
+## Package Management
+- This is a pnpm workspace with turbo for task orchestration
+- Main packages:
+  - `libsync` (CLI package)
+  - `@libsync/eslint-config` (ESLint configuration)
+  - `@libsync/prettier-config` (Prettier configuration)
+
+## Development Workflow
+- Use turbo commands from root: `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm format`
+- For individual package development, use `pnpm -F <package-name> <script>`
+- Build outputs go to `cjs/` and `esm/` directories
+
+## Code Standards
+- TypeScript with strict mode enabled
+- ESLint with custom configuration
+- Prettier for formatting
+- Node.js >= 20.16.0 required
+

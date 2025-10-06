@@ -1,0 +1,27 @@
+# Cache
+.cache
+.turbo
+
+# Node modules
+node_modules
+*.tgz
+
+# Source code
+src/**/*
+
+# Typescript files
+tsconfig*.json
+
+# Build configuration files
+tsup.config.js
+
+# Formatting configuration files
+.eslintrc.json
+
+# Package-specific files
+components.json
+tailwind.css
+tailwind.config.cjs
+.storybook/**/*
+storybook-static/**/*
+

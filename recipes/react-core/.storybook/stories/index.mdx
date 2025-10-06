@@ -1,0 +1,115 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Configure your project" />
+
+# react-core
+
+`react-core` is a React component library that provides a set of accessible, customizable, and reusable components built with React, Radix UI, and Tailwind CSS. It follows modern best practices and provides a solid foundation for building user interfaces.
+
+## Features
+
+- 🎨 Built with Tailwind CSS
+- ♿️ Accessible components using Radix UI
+- 🌗 Dark mode support
+- 🎯 Type-safe with TypeScript
+- 📦 Tree-shakeable exports
+- 🔧 Highly customizable with CSS variables
+
+## Installation
+
+To install the package and its peer dependencies, run the following command:
+
+```bash
+pnpm add react-core tailwindcss react react-dom
+```
+
+## Setup
+
+### 1. Configure Tailwind CSS
+
+First, create a `tailwind.config.js` file in your project root if you don't have one:
+
+```js
+import baseConfig from 'tailwind-config/base';
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  ...baseConfig,
+  content: [
+    // Your project files
+    './src/**/*.{js,ts,jsx,tsx}',
+  ],
+  // Extend the base config theme as needed
+  theme: {
+    ...baseConfig.theme,
+    extend: {
+      ...baseConfig.theme?.extend,
+      colors: {
+        ...baseConfig.theme?.extend?.colors,
+      },
+    },
+  },
+};
+```
+
+### 2. Add CSS Variables
+
+Add the following CSS variables to your global CSS file:
+
+```css
+:root {
+  --background: 0 0% 100%;
+  --foreground: 241 10% 3.9%;
+  --primary: 200 66% 69%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 72.22% 50.59%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 5% 64.9%;
+  --radius: 0.5rem;
+}
+
+/* Optional: Add dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --primary: 200 66% 69%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+}
+```
+
+## Usage
+
+Now you can import and use components from the library:
+
+```tsx
+import { Button } from 'react-core';
+
+export function MyComponent() {
+  return (
+    <Button variant="default" size="default">
+      Click me
+    </Button>
+  );
+}
+```

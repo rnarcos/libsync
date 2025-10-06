@@ -1,0 +1,19 @@
+# Turborepo:
+.turbo
+
+# Node
+node_modules
+
+# Tests
+coverage
+setupTests.js
+jest.config.js
+
+# Log files
+*.log
+
+# Config files
+.eslintrc.json
+
+# Generated after installing dependencies
+*.lock

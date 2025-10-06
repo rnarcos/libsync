@@ -1,0 +1,62 @@
+{
+  "private": true,
+  "name": "@libsync/tailwind-config",
+  "description": "Tailwind CSS configuration for libsync projects",
+  "version": "0.0.1",
+  "license": "MIT",
+  "author": {
+    "name": "Marcos Fernandes",
+    "url": "https://github.com/rnarcos"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://bitbucket.org/libsync/design-system.git",
+    "directory": "configs/tailwind-config"
+  },
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "scripts": {
+    "build": "libsync build",
+    "clean": "libsync clean",
+    "dev": "libsync dev",
+    "dev:watch": "libsync dev --watch",
+    "format": "prettier --check \"src/**/*.{js,cjs,json,md}\"",
+    "format:fix": "prettier --write \"src/**/*.{js,cjs,json,md}\"",
+    "lint": "eslint \"src/**/*.{js,cjs}\"",
+    "lint:fix": "eslint \"src/**/*.{js,cjs}\" --fix",
+    "publish:staging": "libsync publish:staging --force"
+  },
+  "peerDependencies": {
+    "nativewind": "^4.2.0",
+    "tailwindcss": "^3.4.14"
+  },
+  "peerDependenciesMeta": {
+    "nativewind": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@libsync/eslint-config": "workspace:*",
+    "@libsync/prettier-config": "workspace:*",
+    "@types/node": "^20.11.0",
+    "eslint": "^9.35.0",
+    "libsync": "workspace:*",
+    "prettier": "^3.2.5"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "require": "./src/index.js"
+    },
+    "./base": {
+      "import": "./src/base.js",
+      "require": "./src/base.js"
+    },
+    "./native": {
+      "import": "./src/native.js",
+      "require": "./src/native.js"
+    },
+    "./package.json": "./package.json"
+  }
+}

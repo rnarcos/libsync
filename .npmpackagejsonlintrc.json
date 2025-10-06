@@ -1,0 +1,53 @@
+{
+  "extends": "npm-package-json-lint-config-default",
+  "overrides": [
+    {
+      "patterns": [
+        "packages/*/package.json"
+      ],
+      "rules": {
+        "require-version": "error",
+        "require-description": "error",
+        "require-license": "error",
+        "require-repository-directory": "error"
+      }
+    }
+  ],
+  "rules": {
+    "prefer-alphabetical-devDependencies": "error",
+    "prefer-alphabetical-dependencies": "error",
+    "prefer-alphabetical-peerDependencies": "error",
+    "prefer-alphabetical-scripts": "error",
+    "require-version": "off",
+    "prefer-property-order": [
+      "error",
+      [
+        "private",
+        "name",
+        "description",
+        "version",
+        "license",
+        "author",
+        "repository",
+        "contributors",
+        "type",
+        "engines",
+        "packageManager",
+        "os",
+        "cpu",
+        "bin",
+        "main",
+        "module",
+        "types",
+        "scripts",
+        "lint-staged",
+        "dependencies",
+        "peerDependencies",
+        "peerDependenciesMeta",
+        "devDependencies",
+        "sideEffects",
+        "exports"
+      ]
+    ]
+  }
+}

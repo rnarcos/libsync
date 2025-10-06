@@ -1,0 +1,88 @@
+{
+  "private": true,
+  "name": "@libsync/react-core",
+  "description": "React component library built with libsync - shadcn/ui components with TypeScript",
+  "version": "0.0.1",
+  "license": "MIT",
+  "author": {
+    "name": "Marcos Fernandes",
+    "url": "https://github.com/rnarcos"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rnarcos/libsync.git",
+    "directory": "recipes/react-core"
+  },
+  "type": "module",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "libsync build",
+    "clean": "libsync clean",
+    "dev": "concurrently -n \"libsync,storybook,tailwind\" -c \"cyan,magenta,green\" \"libsync dev --watch\" \"CI=true pnpm storybook:watch\" \"pnpm tailwind:watch\"",
+    "format": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\"",
+    "lint:fix": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --fix",
+    "publish:staging": "libsync publish:staging --force",
+    "storybook:build": "storybook build",
+    "storybook:watch": "storybook dev --port 6006 --no-open",
+    "tailwind:build": "tailwindcss -i ./tailwind.css -o ./.storybook/global.css",
+    "tailwind:watch": "pnpm tailwind:build --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "radix-ui": "1.1.2",
+    "tailwind-merge": "^2.6.0"
+  },
+  "peerDependencies": {
+    "class-variance-authority": "^0.7.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tailwindcss": "^3.4.14"
+  },
+  "devDependencies": {
+    "@libsync/eslint-config": "workspace:*",
+    "@libsync/prettier-config": "workspace:*",
+    "@libsync/tailwind-config": "workspace:*",
+    "@storybook/addon-essentials": "^8.6.2",
+    "@storybook/addon-interactions": "^8.6.2",
+    "@storybook/addon-onboarding": "^8.6.2",
+    "@storybook/addon-themes": "^8.6.2",
+    "@storybook/blocks": "^8.6.2",
+    "@storybook/react": "^8.6.2",
+    "@storybook/react-vite": "^8.6.2",
+    "@storybook/test": "^8.6.2",
+    "@types/node": "^20.11.0",
+    "@types/react": "~18.3.12",
+    "@typescript-eslint/eslint-plugin": "^8.44.0",
+    "@typescript-eslint/parser": "^8.44.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^9.35.0",
+    "eslint-plugin-storybook": "^0.12.0",
+    "libsync": "workspace:*",
+    "prettier": "^3.2.5",
+    "storybook": "^8.6.2",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.8.3"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "require": "./src/index.ts"
+    },
+    "./utils": {
+      "types": "./src/utils/index.ts",
+      "import": "./src/utils/index.ts",
+      "require": "./src/utils/index.ts"
+    },
+    "./components": {
+      "types": "./src/components/index.ts",
+      "import": "./src/components/index.ts",
+      "require": "./src/components/index.ts"
+    },
+    "./package.json": "./package.json"
+  }
+}

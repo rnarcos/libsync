@@ -1,0 +1,34 @@
+# Turborepo:
+.turbo
+
+# Node
+node_modules
+
+# Tests
+coverage
+setupTests.js
+jest.config.js
+
+# Log files
+*.log
+
+# Source folder
+src
+
+# Documentation
+docs
+
+# Config files
+.eslintrc.json
+tsup.config.js
+
+# Typescript
+tsconfig.json
+tsconfig.build.json
+./*.d.ts
+
+# Generated after installing dependencies
+*.lock
+
+# NPM configuration files
+.npmrc*

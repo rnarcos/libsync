@@ -1,0 +1,67 @@
+{
+  "private": true,
+  "name": "@libsync/root",
+  "description": "A CLI tool and examples for library maintainers using tsup",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": {
+    "name": "Marcos Fernandes",
+    "url": "https://github.com/rnarcos"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rnarcos/libysnc.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20.16.0"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "build": "turbo run build",
+    "clean": "turbo clean --filter='!libsync' && pnpm -F libsync clean && git clean -xdf node_modules",
+    "dev": "turbo dev",
+    "dev:watch": "turbo dev:watch",
+    "format": "turbo format --continue -- --check --cache --cache-location node_modules/.cache/.prettiercache",
+    "format:fix": "turbo format --continue -- --write --cache --cache-location node_modules/.cache/.prettiercache",
+    "lint": "turbo lint --continue -- --cache --cache-location node_modules/.cache/.eslintcache",
+    "lint:fix": "turbo lint --continue -- --fix --cache --cache-location node_modules/.cache/.eslintcache",
+    "postinstall": "pnpm -F libsync build",
+    "prepare": "husky install",
+    "publish:staging": "turbo publish:staging",
+    "typecheck": "turbo typecheck"
+  },
+  "lint-staged": {
+    "*.+(ts|tsx|js)": [
+      "npx eslint --fix",
+      "npx prettier --write",
+      "npx libsync dev"
+    ],
+    "package.json": [
+      "npx npmPkgJsonLint"
+    ]
+  },
+  "devDependencies": {
+    "@libsync/eslint-config": "workspace:*",
+    "@libsync/prettier-config": "workspace:*",
+    "@turbo/gen": "^1.12.4",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^8.44.0",
+    "@typescript-eslint/parser": "^8.44.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-turbo": "^2.5.6",
+    "husky": "^7.0.0",
+    "libsync": "workspace:*",
+    "lint-staged": "^10.5.4",
+    "markdownlint-cli": "^0.34.0",
+    "npm-package-json-lint": "^7.0.0",
+    "npm-package-json-lint-config-default": "^6.0.0",
+    "prettier": "^3.2.5",
+    "turbo": "^2.3.4",
+    "typescript": "^5.3.3",
+    "verdaccio": "^6.1.2"
+  }
+}

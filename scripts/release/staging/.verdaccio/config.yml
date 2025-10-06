@@ -1,0 +1,37 @@
+storage: ./storage
+auth:
+  htpasswd:
+    file: ./htpasswd
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+packages:
+  'libsync':
+    access: $all
+    publish: $all
+    unpublish: $all
+    proxy: npmjs
+  '@*/*':
+    access: $all
+    publish: $all
+    unpublish: $all
+    proxy: npmjs
+  '**':
+    access: $all
+    publish: $all
+    unpublish: $all
+    proxy: npmjs
+logs:
+  - { type: stdout, format: pretty, level: http }
+web:
+  enable: true
+  title: 'Staging Registry'
+  port: 4874
+listen:
+  - 0.0.0.0:4874
+security:
+  api:
+    mirroring: false
+  web:
+    sign_in_options:
+      disable: true
