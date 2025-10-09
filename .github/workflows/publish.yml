@@ -83,6 +83,8 @@ jobs:
 
       - name: Version packages
         run: pnpm changeset:version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to npm
         run: pnpm exec changeset publish --no-git-tag
