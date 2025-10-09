@@ -19,6 +19,10 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "build": "turbo run build",
+    "changeset:create": "pnpm changeset",
+    "changeset:pre-release:enter": "pnpm changeset pre enter",
+    "changeset:pre-release:exit": "pnpm changeset pre exit",
+    "changeset:version": "pnpm changeset version",
     "clean": "turbo clean --filter='!libsync' && pnpm -F libsync clean && git clean -xdf node_modules",
     "dev": "turbo dev",
     "dev:watch": "turbo dev:watch",
@@ -42,6 +46,8 @@
     ]
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.7",
     "@libsync/eslint-config": "workspace:*",
     "@libsync/prettier-config": "workspace:*",
     "@turbo/gen": "^1.12.4",
