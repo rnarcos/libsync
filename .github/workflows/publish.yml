@@ -68,7 +68,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Check if in pre-release mode
+        id: prerelease
+        run: |
+          if [ -f ".changeset/pre.json" ]; then
+            echo "IN_PRERELEASE=true" >> $GITHUB_OUTPUT
+          else
+            echo "IN_PRERELEASE=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Exit pre-release mode
+        if: steps.prerelease.outputs.IN_PRERELEASE == 'true'
         run: pnpm changeset:pre-release:exit
 
       - name: Version packages
