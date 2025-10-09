@@ -19,8 +19,8 @@
   "scripts": {
     "build": "libsync build",
     "clean": "libsync clean",
-    "dev": "libsync dev --",
-    "dev:watch": "pnpm dev --watch",
+    "dev": "pnpm dev:package-json --watch",
+    "dev:package-json": "libsync dev --",
     "format": "prettier --check \"src/**/*.{js,cjs,json,md}\"",
     "format:fix": "prettier --write \"src/**/*.{js,cjs,json,md}\"",
     "lint": "eslint \"src/**/*.{js,cjs}\"",

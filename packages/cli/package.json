@@ -56,6 +56,11 @@
     "typescript": "^5.3.3"
   },
   "exports": {
+    "./schemas/config": {
+      "types": "./src/schemas/config.js",
+      "import": "./src/schemas/config.js",
+      "require": "./src/schemas/config.js"
+    },
     "./utils/input": {
       "types": "./src/utils/input.js",
       "import": "./src/utils/input.js",
@@ -70,11 +75,6 @@
       "types": "./src/utils/validation.js",
       "import": "./src/utils/validation.js",
       "require": "./src/utils/validation.js"
-    },
-    "./schemas/config": {
-      "types": "./src/schemas/config.js",
-      "import": "./src/schemas/config.js",
-      "require": "./src/schemas/config.js"
     },
     "./package.json": "./package.json"
   }

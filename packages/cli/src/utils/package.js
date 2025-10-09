@@ -493,7 +493,11 @@ function isPublicModule(rootPath, filename) {
   // Include directories, but exclude directories where all files are covered by bin entries
   if (isDirectory(fullPath)) {
     try {
-      const packagePath = join(rootPath, '..');
+      const packagePath = findClosestPackageJson(rootPath);
+      if (!packagePath) {
+        return false;
+      }
+
       const pkg = readPackageJson(packagePath);
       const binPaths = getBinPaths(pkg);
 
@@ -628,19 +632,47 @@ export function getPublicFiles(sourcePath, prefix = '') {
       );
     }
 
-    return files.reduce((acc, filename) => {
+    const result = files.reduce((acc, filename) => {
       const path = join(sourcePath, filename);
-      const childFiles = isDirectory(path)
-        ? getPublicFiles(path, join(prefix, filename))
-        : null;
 
-      if (childFiles) {
-        return { ...childFiles, ...acc };
+      if (isDirectory(path)) {
+        // Recursively process directory
+        const childFiles = getPublicFiles(path, join(prefix, filename));
+
+        // Check if this directory has an index file
+        const hasIndex =
+          existsSync(path) &&
+          readdirSync(path).some((file) =>
+            /^index\.(ts|js|cjs|mjs)$/.test(file),
+          );
+
+        // Start with all child files
+        let result = { ...acc, ...childFiles };
+
+        if (hasIndex) {
+          const indexFileName = readdirSync(path).find((file) =>
+            /^index\.(ts|js|cjs|mjs)$/.test(file),
+          );
+          if (indexFileName) {
+            const indexFile = join(path, indexFileName);
+            const dirKey = normalizePath(join(prefix, filename));
+            result[dirKey] = normalizePath(indexFile);
+
+            // Remove the explicit index file export (directory export replaces it)
+            const indexKey = normalizePath(join(prefix, filename, 'index'));
+            delete result[indexKey];
+          }
+        }
+
+        return result;
       } else {
+        // Regular file - add it to exports
         const key = removeExt(normalizePath(join(prefix, filename)));
         return { ...acc, [key]: normalizePath(path) };
       }
     }, /** @type {Record<string, string>} */ ({}));
+
+    return result;
   } catch (error) {
     if (error instanceof ConfigurationError) {
       throw error;
@@ -703,61 +735,47 @@ export function getBuildFolders(rootPath) {
 }
 
 /**
- * Get bin file paths from package.json
+ * Get bin export keys from package.json
+ * Converts bin paths to their corresponding export key format
  * @param {import('../schemas/config.js').PackageJson} pkg - Package.json content
- * @param {string} _sourcePath - Source directory path
- * @returns {Set<string>} Set of normalized bin file paths
+ * @returns {Set<string>} Set of export keys that are bin entries
  */
-function getBinFilePaths(pkg, _sourcePath) {
-  const binPaths = new Set();
+function getBinExportKeys(pkg) {
+  const binExportKeys = new Set();
 
-  if (!pkg.bin) return binPaths;
+  if (!pkg.bin) return binExportKeys;
+
+  /**
+   * Convert a bin path to an export key
+   * @param {string} binPath - Bin path from package.json (e.g., "./src/index.js", "./cjs/commands/build.cjs")
+   * @returns {string} Export key (e.g., ".", "./commands/build")
+   */
+  const binPathToExportKey = (binPath) => {
+    let path = normalizePath(binPath)
+      .replace(/^\.\//, '') // Remove leading ./
+      .replace(/^(src|cjs|esm)\//, '') // Remove src/, cjs/, or esm/ prefix
+      .replace(/\.(js|jsx|ts|tsx|cjs|mjs|cts|mts)$/, ''); // Remove extension
+
+    // Convert "index" to "." (root export)
+    if (path === 'index') {
+      return '.';
+    }
+
+    // Add ./ prefix for non-root exports
+    return `./${path}`;
+  };
 
   if (typeof pkg.bin === 'string') {
-    // Single bin entry - normalize path relative to source
-    const normalizedPath = normalizePath(pkg.bin)
-      .replace(/^\.\//, '') // Remove leading ./
-      .replace(/\.(js|ts|jsx|tsx)$/, ''); // Remove extension for comparison
-    binPaths.add(normalizedPath);
+    binExportKeys.add(binPathToExportKey(pkg.bin));
   } else if (typeof pkg.bin === 'object') {
-    // Multiple bin entries - normalize all paths
     Object.values(pkg.bin).forEach((binPath) => {
       if (typeof binPath === 'string') {
-        const normalizedPath = normalizePath(binPath)
-          .replace(/^\.\//, '') // Remove leading ./
-          .replace(/\.(js|ts|jsx|tsx)$/, ''); // Remove extension for comparison
-        binPaths.add(normalizedPath);
+        binExportKeys.add(binPathToExportKey(binPath));
       }
     });
   }
 
-  return binPaths;
-}
-
-/**
- * Filter public files to exclude bin entries
- * @param {Record<string, string>} publicFiles - Public files mapping
- * @param {Set<string>} binPaths - Set of bin file paths to exclude
- * @param {string} sourcePath - Source directory path
- * @returns {Record<string, string>} Filtered public files
- */
-function filterBinFromPublicFiles(publicFiles, binPaths, sourcePath) {
-  if (binPaths.size === 0) return publicFiles;
-
-  return Object.fromEntries(
-    Object.entries(publicFiles).filter(([_name, path]) => {
-      // Convert file path to relative path for comparison
-      const relativePath = normalizePath(path)
-        .replace(normalizePath(sourcePath), '')
-        .replace(/^\//, '') // Remove leading /
-        .replace(/\.(js|ts|jsx|tsx)$/, ''); // Remove extension
-
-      // Check if this file is referenced in bin
-      return (
-        !binPaths.has(`src/${relativePath}`) && !binPaths.has(relativePath)
-      );
-    }),
-  );
+  return binExportKeys;
 }
 
 /**
@@ -788,15 +806,10 @@ function getIndexFileExtension(sourcePath, prod) {
 export function getPackageJson(rootPath, prod = false) {
   const pkg = readPackageJson(rootPath);
   const sourcePath = getSourcePath(rootPath);
-  const allPublicFiles = getPublicFiles(sourcePath);
+  const publicFiles = getPublicFiles(sourcePath);
 
-  // Filter out bin files from exports
-  const binFilePaths = getBinFilePaths(pkg, sourcePath);
-  const publicFiles = filterBinFromPublicFiles(
-    allPublicFiles,
-    binFilePaths,
-    sourcePath,
-  );
+  // Get bin export keys to exclude from exports
+  const binExportKeys = getBinExportKeys(pkg);
 
   const sourceDir = getSourceDir();
   const cjsDir = getCJSDir();
@@ -832,20 +845,19 @@ export function getPackageJson(rootPath, prod = false) {
 
   const moduleExports = Object.entries(publicFiles).reduce(
     (acc, [name, path]) => {
-      if (name === 'index') {
-        // Always include the main entry point, even if it's also a bin file
-        // The main entry represents the library API, bin represents CLI usage
-        return { '.': getExports(path), ...acc };
+      // Convert name to export key format
+      const exportKey =
+        name === 'index' ? '.' : `./${name.replace(/\/index$/, '')}`;
+
+      // Skip if this export key is a bin entry
+      if (binExportKeys.has(exportKey)) {
+        return acc;
       }
-      const pathname = `./${name.replace(/\/index$/, '')}`;
-      return { ...acc, [pathname]: getExports(path) };
+
+      return { ...acc, [exportKey]: getExports(path) };
     },
     /** @type {Record<string, any>} */ ({}),
   );
-
-  // Note: The main entry point (".") is only included if it's not filtered out
-  // by bin filtering. If index.js is referenced in bin, it won't be in publicFiles
-  // and therefore won't be exported as ".", which is the correct behavior.
 
   // Update package fields based on build configuration
   if ('cjs' in builds) {
@@ -892,15 +904,10 @@ export function writePackageJson(rootPath, prod = false) {
 
     // Calculate what the new values should be
     const sourcePath = getSourcePath(rootPath);
-    const allPublicFiles = getPublicFiles(sourcePath);
+    const publicFiles = getPublicFiles(sourcePath);
 
-    // Filter out bin files from exports
-    const binFilePaths = getBinFilePaths(pkg, sourcePath);
-    const publicFiles = filterBinFromPublicFiles(
-      allPublicFiles,
-      binFilePaths,
-      sourcePath,
-    );
+    // Get bin export keys to exclude from exports
+    const binExportKeys = getBinExportKeys(pkg);
 
     const sourceDir = getSourceDir();
     const cjsDir = getCJSDir();
@@ -969,14 +976,19 @@ export function writePackageJson(rootPath, prod = false) {
       return exportConfig;
     };
 
-    // Generate exports
+    // Generate exports, excluding bin entries
     const moduleExports = Object.entries(publicFiles).reduce(
       (acc, [name, path]) => {
-        if (name === 'index') {
-          return { '.': getExports(path), ...acc };
+        // Convert name to export key format
+        const exportKey =
+          name === 'index' ? '.' : `./${name.replace(/\/index$/, '')}`;
+
+        // Skip if this export key is a bin entry
+        if (binExportKeys.has(exportKey)) {
+          return acc;
         }
-        const pathname = `./${name.replace(/\/index$/, '')}`;
-        return { ...acc, [pathname]: getExports(path) };
+
+        return { ...acc, [exportKey]: getExports(path) };
       },
       /** @type {Record<string, any>} */ ({}),
     );

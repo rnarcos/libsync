@@ -8,8 +8,14 @@
 # Do not edit this section manually - it will be overwritten
 /cjs
 /components
+/components/button
+/components/button/button.component
+/components/button/button.data
+/components/button/button.props
 /esm
 /utils
+/utils/ui
+/utils/ui/cn
 # End build artifacts
 
 # npm configuration files (.npmrc, .npmrc.staging, etc.)

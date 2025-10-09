@@ -3,84 +3,42 @@
   "ui": "tui",
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "src/**",
-        "package.json",
-        "tsconfig*.json",
-        "tsup.config.*"
-      ],
-      "outputs": [
-        "cjs/**",
-        "esm/**",
-        "bin/**",
-        ".gitignore"
-      ],
-      "env": [
-        "CI"
-      ]
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "package.json", "tsconfig*.json", "tsup.config.*"],
+      "outputs": ["cjs/**", "esm/**", "bin/**", ".gitignore"],
+      "env": ["CI"]
     },
     "dev": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true,
-      "inputs": [
-        "src/**",
-        "package.json"
-      ],
-      "outputs": [
-        "package.json",
-        "cjs/**",
-        "esm/**"
-      ]
+      "inputs": ["src/**", "package.json"],
+      "outputs": ["package.json", "cjs/**", "esm/**"]
     },
-    "dev:watch": {
-      "dependsOn": [
-        "^build"
-      ],
+    "dev:package-json": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true,
-      "inputs": [
-        "src/**"
-      ],
-      "outputs": [
-        "package.json"
-      ]
+      "inputs": ["src/**", "package.json"],
+      "outputs": ["package.json"]
     },
     "format": {
-      "outputs": [
-        ".cache/.prettiercache"
-      ],
+      "outputs": [".cache/.prettiercache"],
       "outputLogs": "new-only"
     },
     "lint": {
-      "outputs": [
-        ".cache/.eslintcache"
-      ]
+      "outputs": [".cache/.eslintcache"]
     },
     "typecheck": {
-      "outputs": [
-        "./tsconfig.tsbuildinfo"
-      ]
+      "outputs": ["./tsconfig.tsbuildinfo"]
     },
     "clean": {
       "cache": false
     },
     "publish:staging": {
       "cache": false,
-      "inputs": [
-        "src/**",
-        "package.json",
-        "tsconfig*.json",
-        "tsup.config.*"
-      ],
-      "env": [
-        "CI"
-      ]
+      "inputs": ["src/**", "package.json", "tsconfig*.json", "tsup.config.*"],
+      "env": ["CI"]
     }
   }
 }

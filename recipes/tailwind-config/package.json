@@ -10,8 +10,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://bitbucket.org/libsync/design-system.git",
-    "directory": "configs/tailwind-config"
+    "url": "http://github.com/rnarcos/libsync.git",
+    "directory": "recipes/tailwind-config"
   },
   "type": "module",
   "main": "src/index.js",
@@ -19,8 +19,8 @@
   "scripts": {
     "build": "libsync build",
     "clean": "libsync clean",
-    "dev": "libsync dev",
-    "dev:watch": "libsync dev --watch",
+    "dev": "pnpm dev:package-json --watch",
+    "dev:package-json": "libsync dev --",
     "format": "prettier --check \"src/**/*.{js,cjs,json,md}\"",
     "format:fix": "prettier --write \"src/**/*.{js,cjs,json,md}\"",
     "lint": "eslint \"src/**/*.{js,cjs}\"",
