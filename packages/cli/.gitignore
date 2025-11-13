@@ -8,5 +8,5 @@
 /utils/validation
 # End build artifacts
 
-# npm configuration files
-.npmrc*
+# Package specific artifacts
+.verdaccio

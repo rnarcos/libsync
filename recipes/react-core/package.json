@@ -1,5 +1,4 @@
 {
-  "private": true,
   "name": "@libsync/react-core",
   "description": "React component library built with libsync - shadcn/ui components with TypeScript",
   "version": "0.0.1",

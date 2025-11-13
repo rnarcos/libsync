@@ -280,7 +280,7 @@ program
   )
   .option(
     '--staging-version',
-    ' Use staging-specific versioning (adds staging suffix)',
+    'Use staging-specific versioning (adds staging suffix)',
   )
   .action(async (options, cmd) => {
     const globalOptions = cmd.parent?.opts() || {};
