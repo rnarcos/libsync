@@ -30,5 +30,6 @@ tsconfig.build.json
 # Generated after installing dependencies
 *.lock
 
-# NPM configuration files
+# Package specific artifacts
 .npmrc*
+.verdaccio

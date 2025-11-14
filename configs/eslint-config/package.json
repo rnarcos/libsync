@@ -1,5 +1,5 @@
 {
-  "private": false,
+  "private": true,
   "name": "@libsync/eslint-config",
   "description": "ESLint configuration for libsync projects",
   "version": "0.0.1",
@@ -14,8 +14,8 @@
     "directory": "configs/eslint-config"
   },
   "type": "module",
-  "main": "src/index.js",
-  "module": "src/index.js",
+  "main": "./src/index.js",
+  "module": "./src/index.js",
   "scripts": {
     "build": "libsync build",
     "clean": "libsync clean",

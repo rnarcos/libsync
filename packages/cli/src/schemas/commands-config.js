@@ -21,7 +21,7 @@ const validPath = z.string().refine(
 /**
  * Configuration validation schemas for CLI commands
  */
-export const configValidation = {
+export const commandsConfigSchema = {
   build: z.object({
     path: validPath.default(process.cwd()),
     watch: z.boolean().default(false),
@@ -44,7 +44,6 @@ export const configValidation = {
   publishStaging: z.object({
     port: z.number().int().min(1024).max(65535).default(4873),
     path: validPath.default(process.cwd()),
-    build: z.boolean().default(true),
     verbose: z.boolean().default(false),
     reuseServer: z.boolean().default(false),
     force: z.boolean().default(false),
@@ -129,7 +128,6 @@ export const tsConfigSchema = z.object({
  * @typedef {Object} PublishStagingOptions
  * @property {number} port - Registry port number (1024-65535)
  * @property {string} path - Package path to publish
- * @property {boolean} build - Whether to build before publishing
  * @property {boolean} verbose - Enable verbose logging
  * @property {boolean} reuseServer - Automatically reuse existing Verdaccio servers without prompting
  * @property {boolean} force - Force republish existing packages (overwrite existing versions)

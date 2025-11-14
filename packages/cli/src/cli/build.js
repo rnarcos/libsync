@@ -12,7 +12,6 @@ import chalk from 'chalk';
 import {
   cleanBuild,
   getPackageBuilds,
-  getPublicFiles,
   getAllBuildFiles,
   getSourcePath,
   isBinaryPackage,
@@ -23,6 +22,7 @@ import {
   PackageError,
   ConfigurationError,
 } from '../utils/package.js';
+import { getConfig, initConfig } from '../utils/config.js';
 
 /**
  * Build options type definition
@@ -39,6 +39,9 @@ import {
  */
 export async function buildCommand(options) {
   const { path: packagePath, watch: watchMode, verbose } = options;
+
+  // Initialize config before any operations
+  await initConfig(packagePath);
 
   console.log(chalk.blue(`🔨 Building package at: ${packagePath}`));
   if (watchMode) {
@@ -138,7 +141,7 @@ export async function buildCommand(options) {
     // Step 7: Generate .gitignore and proxies (but keep package.json in dev mode)
     console.log(chalk.gray('📝 Step 7: Generating package metadata...'));
     makeGitignore(packagePath);
-    makeProxies(packagePath);
+    makeProxies(packagePath, true); // true = production mode
 
     // Step 8: Final step - Update package.json to production mode (only if everything succeeded)
     console.log(
@@ -213,7 +216,11 @@ export async function buildCommand(options) {
  * @returns {Promise<void>} Compilation promise
  */
 async function runTypeScriptCompilation(packagePath, builds, verbose) {
-  const buildTSConfigPath = path.join(packagePath, 'tsconfig.build.json');
+  const config = getConfig();
+  const buildTSConfigPath = path.join(
+    packagePath,
+    config?.typescript?.buildConfigFile || 'tsconfig.build.json',
+  );
 
   if (!fse.existsSync(buildTSConfigPath)) {
     console.log(
@@ -225,14 +232,17 @@ async function runTypeScriptCompilation(packagePath, builds, verbose) {
   }
 
   try {
-    const tsconfig = /** @type {import('../schemas/config.js').TsConfig} */ (
-      fse.readJSONSync(buildTSConfigPath)
-    );
+    const tsconfig =
+      /** @type {import('../schemas/commands-config.js').TsConfig} */ (
+        fse.readJSONSync(buildTSConfigPath)
+      );
 
     // Clear TypeScript build cache
     const tsBuildCachePath = path.join(
       packagePath,
-      tsconfig.compilerOptions?.tsBuildInfoFile ?? '.cache/tsbuildinfo.json',
+      config?.typescript?.buildCacheFile ||
+        tsconfig.compilerOptions?.tsBuildInfoFile ||
+        '.cache/tsbuildinfo.json',
     );
 
     if (fse.existsSync(tsBuildCachePath)) {
@@ -318,21 +328,55 @@ async function runTypeScriptCompilation(packagePath, builds, verbose) {
  * @returns {Promise<Record<string, any>>} Tsup configuration overrides
  */
 async function loadTsupConfiguration(packagePath, builds, verbose) {
-  // Try both .js and .mjs extensions
+  const config = getConfig();
+
+  // Priority 1: libsync.config.mjs commands.build.tsup
+  if (config?.commands?.build?.tsup) {
+    console.log(
+      chalk.gray('   Loading tsup config from libsync.config.mjs...'),
+    );
+
+    const tsupConfig = config.commands.build.tsup;
+
+    // Check if format-specific or universal
+    const hasFormatKeys =
+      'default' in tsupConfig || 'esm' in tsupConfig || 'cjs' in tsupConfig;
+
+    if (hasFormatKeys) {
+      // Format-specific: { default: {...}, esm: {...}, cjs: {...} }
+      const formatConfig = /** @type {Record<string, any>} */ (tsupConfig);
+      return Object.keys(builds).reduce(
+        (acc, format) => ({
+          ...acc,
+          [format]: formatConfig[format] || formatConfig.default,
+        }),
+        /** @type {Record<string, any>} */ ({}),
+      );
+    } else {
+      // Universal: apply same config to all formats
+      return Object.keys(builds).reduce(
+        (acc, format) => ({
+          ...acc,
+          [format]: tsupConfig,
+        }),
+        /** @type {Record<string, any>} */ ({}),
+      );
+    }
+  }
+
+  // Priority 2: Backward compatibility with tsup.config.{js,mjs}
   const tsupConfigPaths = [
     path.join(packagePath, 'tsup.config.js'),
     path.join(packagePath, 'tsup.config.mjs'),
   ];
 
-  const tsupConfigPath = tsupConfigPaths.find((configPath) =>
-    fse.existsSync(configPath),
-  );
+  const tsupConfigPath = tsupConfigPaths.find((p) => fse.existsSync(p));
 
-  try {
-    if (tsupConfigPath) {
-      const configFileName = path.basename(tsupConfigPath);
-      console.log(chalk.gray(`   Loading ${configFileName}...`));
+  if (tsupConfigPath) {
+    const configFileName = path.basename(tsupConfigPath);
+    console.log(chalk.gray(`   Loading ${configFileName}...`));
 
+    try {
       const configModule = await import(tsupConfigPath);
       const defaultOverride = configModule.default;
 
@@ -340,38 +384,31 @@ async function loadTsupConfiguration(packagePath, builds, verbose) {
         console.log(chalk.gray('   Found custom tsup configuration'));
       }
 
-      return Object.keys(builds).reduce((accumulator, buildFormat) => {
-        const buildSpecificOverride = configModule[buildFormat];
+      return Object.keys(builds).reduce((acc, format) => {
+        const formatOverride = configModule[format];
         return {
-          ...accumulator,
-          [buildFormat]: buildSpecificOverride || defaultOverride,
+          ...acc,
+          [format]: formatOverride || defaultOverride,
         };
       }, /** @type {Record<string, any>} */ ({}));
-    } else {
-      console.log(chalk.gray('   Using default tsup configuration'));
-
-      return Object.keys(builds).reduce(
-        (accumulator, buildFormat) => ({
-          ...accumulator,
-          [buildFormat]: undefined,
-        }),
-        /** @type {Record<string, any>} */ ({}),
+    } catch (error) {
+      console.warn(
+        chalk.yellow(
+          `   Warning: Could not load ${configFileName}: ${error instanceof Error ? error.message : String(error)}`,
+        ),
       );
+      console.warn(chalk.yellow('   Falling back to default configuration'));
     }
-  } catch (error) {
-    console.warn(
-      chalk.yellow(
-        `   Warning: Could not load tsup.config.js: ${error instanceof Error ? error.message : String(error)}`,
-      ),
-    );
-    console.warn(chalk.yellow('   Falling back to default configuration'));
-
-    return Object.keys(builds).reduce(
-      (accumulator, buildFormat) => ({
-        ...accumulator,
-        [buildFormat]: undefined,
-      }),
-      /** @type {Record<string, any>} */ ({}),
-    );
+  } else {
+    console.log(chalk.gray('   Using default tsup configuration'));
   }
+
+  // Priority 3: No config - use defaults
+  return Object.keys(builds).reduce(
+    (acc, format) => ({
+      ...acc,
+      [format]: undefined,
+    }),
+    /** @type {Record<string, any>} */ ({}),
+  );
 }
