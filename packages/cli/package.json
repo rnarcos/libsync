@@ -2,7 +2,7 @@
   "private": false,
   "name": "libsync",
   "description": "A CLI tool for library maintainers using tsup - build, develop, and publish with ease",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "license": "MIT",
   "author": {
     "name": "Marcos Fernandes",
@@ -15,11 +15,11 @@
   },
   "type": "module",
   "bin": {
-    "libsync": "./src/cli/index.js"
+    "libsync": "./cjs/cli/index.cjs"
   },
-  "main": "./src/index.js",
-  "module": "./src/index.js",
-  "types": "./src/index.js",
+  "main": "./cjs/index.cjs",
+  "module": "./esm/index.js",
+  "types": "./esm/index.d.ts",
   "scripts": {
     "build": "node src/cli/index.js build",
     "clean": "node src/cli/index.js clean",
@@ -62,54 +62,54 @@
   },
   "exports": {
     "./cli": {
-      "types": "./src/cli/index.js",
-      "import": "./src/cli/index.js",
-      "require": "./src/cli/index.js"
+      "types": "./esm/cli/index.d.ts",
+      "import": "./esm/cli/index.js",
+      "require": "./cjs/cli/index.cjs"
     },
     "./config": {
-      "types": "./src/config/index.js",
-      "import": "./src/config/index.js",
-      "require": "./src/config/index.js"
+      "types": "./esm/config/index.d.ts",
+      "import": "./esm/config/index.js",
+      "require": "./cjs/config/index.cjs"
     },
     ".": {
-      "types": "./src/index.js",
-      "import": "./src/index.js",
-      "require": "./src/index.js"
+      "types": "./esm/index.d.ts",
+      "import": "./esm/index.js",
+      "require": "./cjs/index.cjs"
     },
     "./schemas/commands-config": {
-      "types": "./src/schemas/commands-config.js",
-      "import": "./src/schemas/commands-config.js",
-      "require": "./src/schemas/commands-config.js"
+      "types": "./esm/schemas/commands-config.d.ts",
+      "import": "./esm/schemas/commands-config.js",
+      "require": "./cjs/schemas/commands-config.cjs"
     },
     "./schemas": {
-      "types": "./src/schemas/index.js",
-      "import": "./src/schemas/index.js",
-      "require": "./src/schemas/index.js"
+      "types": "./esm/schemas/index.d.ts",
+      "import": "./esm/schemas/index.js",
+      "require": "./cjs/schemas/index.cjs"
     },
     "./utils/config": {
-      "types": "./src/utils/config.js",
-      "import": "./src/utils/config.js",
-      "require": "./src/utils/config.js"
+      "types": "./esm/utils/config.d.ts",
+      "import": "./esm/utils/config.js",
+      "require": "./cjs/utils/config.cjs"
     },
     "./utils/input": {
-      "types": "./src/utils/input.js",
-      "import": "./src/utils/input.js",
-      "require": "./src/utils/input.js"
+      "types": "./esm/utils/input.d.ts",
+      "import": "./esm/utils/input.js",
+      "require": "./cjs/utils/input.cjs"
     },
     "./utils/package": {
-      "types": "./src/utils/package.js",
-      "import": "./src/utils/package.js",
-      "require": "./src/utils/package.js"
+      "types": "./esm/utils/package.d.ts",
+      "import": "./esm/utils/package.js",
+      "require": "./cjs/utils/package.cjs"
     },
     "./utils/patterns": {
-      "types": "./src/utils/patterns.js",
-      "import": "./src/utils/patterns.js",
-      "require": "./src/utils/patterns.js"
+      "types": "./esm/utils/patterns.d.ts",
+      "import": "./esm/utils/patterns.js",
+      "require": "./cjs/utils/patterns.cjs"
     },
     "./utils/validation": {
-      "types": "./src/utils/validation.js",
-      "import": "./src/utils/validation.js",
-      "require": "./src/utils/validation.js"
+      "types": "./esm/utils/validation.d.ts",
+      "import": "./esm/utils/validation.js",
+      "require": "./cjs/utils/validation.cjs"
     },
     "./package.json": "./package.json"
   }

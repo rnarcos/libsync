@@ -14,8 +14,8 @@
     "directory": "configs/eslint-config"
   },
   "type": "module",
-  "main": "./src/index.js",
-  "module": "./src/index.js",
+  "main": "./cjs/index.cjs",
+  "module": "./esm/index.js",
   "scripts": {
     "build": "libsync build",
     "clean": "libsync clean",
@@ -65,20 +65,20 @@
   },
   "exports": {
     "./base": {
-      "import": "./src/base.js",
-      "require": "./src/base.js"
+      "import": "./esm/base.js",
+      "require": "./cjs/base.cjs"
     },
     "./node": {
-      "import": "./src/node.js",
-      "require": "./src/node.js"
+      "import": "./esm/node.js",
+      "require": "./cjs/node.cjs"
     },
     "./react": {
-      "import": "./src/react.js",
-      "require": "./src/react.js"
+      "import": "./esm/react.js",
+      "require": "./cjs/react.cjs"
     },
     "./typescript": {
-      "import": "./src/typescript.js",
-      "require": "./src/typescript.js"
+      "import": "./esm/typescript.js",
+      "require": "./cjs/typescript.cjs"
     },
     "./package.json": "./package.json"
   }

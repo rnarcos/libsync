@@ -14,8 +14,8 @@
     "directory": "configs/prettier-config"
   },
   "type": "module",
-  "main": "./src/index.js",
-  "module": "./src/index.js",
+  "main": "./cjs/index.cjs",
+  "module": "./esm/index.js",
   "scripts": {
     "build": "libsync build",
     "clean": "libsync clean",
@@ -36,16 +36,16 @@
   },
   "exports": {
     "./base": {
-      "import": "./src/base.js",
-      "require": "./src/base.js"
+      "import": "./esm/base.js",
+      "require": "./cjs/base.cjs"
     },
     ".": {
-      "import": "./src/index.js",
-      "require": "./src/index.js"
+      "import": "./esm/index.js",
+      "require": "./cjs/index.cjs"
     },
     "./web": {
-      "import": "./src/web.js",
-      "require": "./src/web.js"
+      "import": "./esm/web.js",
+      "require": "./cjs/web.cjs"
     },
     "./package.json": "./package.json"
   }
