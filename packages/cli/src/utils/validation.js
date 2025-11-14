@@ -7,8 +7,12 @@ import { existsSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 import chalk from 'chalk';
 import { glob } from 'glob';
-import { packageJsonSchema, tsConfigSchema } from '../schemas/config.js';
+import {
+  packageJsonSchema,
+  tsConfigSchema,
+} from '../schemas/commands-config.js';
 import { readPackageJson } from './package.js';
+import { getConfig } from './config.js';
 
 /**
  * Display a welcome message with tool information
@@ -62,7 +66,7 @@ export function validatePath(path) {
  * Package validation result
  * @typedef {Object} PackageValidationResult
  * @property {boolean} isValid - Whether the package is valid
- * @property {import('../schemas/config.js').PackageJson} [packageJson] - Parsed package.json
+ * @property {import('../schemas/commands-config.js').PackageJson} [packageJson] - Parsed package.json
  * @property {string[]} warnings - Warning messages
  * @property {string[]} errors - Error messages
  */
@@ -177,8 +181,15 @@ export function validatePackageJson(packagePath) {
 export async function validateTsConfig(packagePath) {
   const warnings = [];
   const errors = [];
-  const tsConfigPath = join(packagePath, 'tsconfig.json');
-  const buildTsConfigPath = join(packagePath, 'tsconfig.build.json');
+  const config = getConfig();
+  const tsConfigPath = join(
+    packagePath,
+    config?.typescript?.configFile || 'tsconfig.json',
+  );
+  const buildTsConfigPath = join(
+    packagePath,
+    config?.typescript?.buildConfigFile || 'tsconfig.build.json',
+  );
 
   if (!existsSync(tsConfigPath)) {
     warnings.push(

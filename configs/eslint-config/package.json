@@ -14,8 +14,8 @@
     "directory": "configs/eslint-config"
   },
   "type": "module",
-  "main": "src/index.js",
-  "module": "src/index.js",
+  "main": "./src/index.js",
+  "module": "./src/index.js",
   "scripts": {
     "build": "libsync build",
     "clean": "libsync clean",

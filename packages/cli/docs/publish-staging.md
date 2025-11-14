@@ -10,13 +10,24 @@ libsync publish:staging [options]
 
 ## Options
 
-- `-p, --port <number>` - Registry port number (default: 4874)
+- `-p, --port <number>` - Registry port number (default: 4873)
 - `--path <path>` - Package path to publish (default: current directory)
-- `--no-build` - Skip building the package before publishing
 - `--reuse-server` - Automatically reuse existing Verdaccio servers without prompting
 - `--force` - Force republish existing packages (overwrite existing versions)
 - `--staging-version` - Use staging-specific versioning (adds staging suffix)
 - `--verbose` - Enable verbose logging
+
+## Prerequisites
+
+**Important:** The package must be built before publishing to staging. The command will verify that build artifacts exist and throw an error if the package hasn't been built yet.
+
+```bash
+# Build first
+libsync build
+
+# Then publish to staging
+libsync publish:staging
+```
 
 ## Description
 
@@ -71,25 +82,28 @@ The staging command automatically:
 ### Basic Staging Workflow
 
 ```bash
-# 1. Start staging environment
+# 1. Build the package
+libsync build
+
+# 2. Publish to staging
 libsync publish:staging
 
-# 2. Test in another project
+# 3. Test in another project
 cd ../test-project
-npm install my-package --registry http://localhost:4874
+npm install my-package --registry http://localhost:4873
 
-# 3. Verify it works
+# 4. Verify it works
 node -e "console.log(require('my-package'))"
 ```
 
 ### Advanced Workflow
 
 ```bash
+# Build first
+libsync build
+
 # Custom port
 libsync publish:staging --port 3000
-
-# Skip building (if already built)
-libsync publish:staging --no-build
 
 # Force overwrite existing version
 libsync publish:staging --force
@@ -106,12 +120,12 @@ The command intelligently manages Verdaccio servers:
 
 ```bash
 # First run - starts new server
-libsync publish:staging --port 4874
-# ✅ Starting new Verdaccio server on port 4874
+libsync publish:staging --port 4873
+# ✅ Starting new Verdaccio server on port 4873
 
 # Second run - detects existing server
-libsync publish:staging --port 4874
-# ✅ Found existing Verdaccio server on port 4874
+libsync publish:staging --port 4873
+# ✅ Found existing Verdaccio server on port 4873
 # 🤔 Reuse existing server? [Y/n]
 ```
 
@@ -122,7 +136,7 @@ libsync publish:staging --port 4874
 libsync publish:staging --reuse-server
 
 # Force new server (different port)
-libsync publish:staging --port 4874
+libsync publish:staging --port 4873
 ```
 
 ### Multi-Package Publishing
@@ -131,15 +145,15 @@ Perfect for development workflows:
 
 ```bash
 # Terminal 1: Start registry
-libsync publish:staging --port 4874
+libsync publish:staging --port 4873
 
 # Terminal 2: Publish package A
 cd packages/package-a
-libsync publish:staging --port 4874 --reuse-server
+libsync publish:staging --port 4873 --reuse-server
 
 # Terminal 3: Publish package B
 cd packages/package-b
-libsync publish:staging --port 4874 --reuse-server
+libsync publish:staging --port 4873 --reuse-server
 ```
 
 ## Version Conflict Resolution
@@ -420,15 +434,13 @@ cat .npmrc.staging
 # Should contain: registry=http://localhost:4874
 ```
 
-**Build Failures**
+**Package Not Built**
 
 ```bash
-# Skip build if already built
-libsync publish:staging --no-build
-
-# Or build separately first
+# Error: Package has not been built yet
+# Solution: Build the package first
 libsync build
-libsync publish:staging --no-build
+libsync publish:staging
 ```
 
 ### Best Practices
@@ -443,7 +455,7 @@ libsync publish:staging --no-build
 
 ### Performance Tips
 
+- Build once, publish multiple times with `--force` or `--staging-version`
 - Use `--reuse-server` for multiple packages
-- Use `--no-build` if already built
 - Use specific ports to avoid conflicts
 - Keep Verdaccio running for multiple test sessions

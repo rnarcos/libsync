@@ -7,7 +7,7 @@
  * Designed to work when libsync is installed in node_modules of external repositories.
  *
  * Key Features:
- * - Validates and builds packages (unless --no-build)
+ * - Validates packages and verifies they are built
  * - Starts or reuses Verdaccio on a specified port
  * - Always allows republishing same versions (force mode by default)
  * - Uses OS temp directory for storage (no file mutations in library directory)
@@ -22,13 +22,18 @@ import { tmpdir } from 'os';
 import { mkdtempSync, rmSync } from 'fs';
 import chalk from 'chalk';
 import { runServer } from 'verdaccio';
-import { PackageError, ConfigurationError } from '../utils/package.js';
-import { packageJsonSchema } from '../schemas/config.js';
+import {
+  PackageError,
+  ConfigurationError,
+  getPackageBuilds,
+} from '../utils/package.js';
+import { packageJsonSchema } from '../schemas/commands-config.js';
 import {
   checkPortAvailable,
   promptUser,
   findAvailablePort,
 } from '../utils/input.js';
+import { initConfig } from '../utils/config.js';
 
 // Configure Node.js to prefer IPv4 for localhost connections
 setDefaultResultOrder('ipv4first');
@@ -549,44 +554,60 @@ async function publishToRegistry(packagePath, registryUrl, packageInfo) {
 }
 
 /**
- * Build package using libsync build command
+ * Check if package is built and ready for publishing
  * @param {string} packagePath - Path to package
- * @returns {Promise<void>}
+ * @throws {ConfigurationError} If package is not built
  */
-async function buildPackage(packagePath) {
-  console.log(chalk.blue('🔨 Building package...'));
+function checkPackageBuilt(packagePath) {
+  console.log(chalk.blue('🔍 Checking build status...'));
 
-  const libsyncBin = process.env.npm_execpath
-    ? 'libsync'
-    : join(packagePath, 'src', 'index.js');
+  try {
+    const builds = getPackageBuilds(packagePath);
+    const buildTypes = Object.keys(builds);
 
-  const buildProcess = spawn(
-    process.env.npm_execpath ? 'npx' : 'node',
-    process.env.npm_execpath ? ['libsync', 'build'] : [libsyncBin, 'build'],
-    {
-      cwd: packagePath,
-      stdio: 'inherit',
-    },
-  );
+    if (buildTypes.length === 0) {
+      throw new ConfigurationError('Package has not been built yet', [
+        'Run the build command first:',
+        '  npm run build',
+        '  or',
+        '  npx libsync build',
+      ]);
+    }
 
-  await new Promise((resolve, reject) => {
-    buildProcess.on('close', (code) => {
-      if (code === 0) {
-        console.log(chalk.green('✅ Package built successfully'));
-        resolve(undefined);
-      } else {
-        reject(new Error(`Build failed with exit code ${code}`));
+    // Check if build directories exist and have files
+    for (const [buildType, buildPath] of Object.entries(builds)) {
+      if (!existsSync(buildPath)) {
+        throw new ConfigurationError(
+          `Build directory '${buildType}' not found: ${buildPath}`,
+          [
+            'Run the build command to generate build files:',
+            '  npm run build',
+            '  or',
+            '  npx libsync build',
+          ],
+        );
       }
-    });
+    }
 
-    buildProcess.on('error', reject);
-  });
+    console.log(chalk.green('   ✓ Package is built'));
+    console.log(chalk.gray(`   Build types: ${buildTypes.join(', ')}`));
+  } catch (error) {
+    if (error instanceof ConfigurationError) {
+      throw error;
+    }
+    throw new ConfigurationError('Unable to verify build status', [
+      'Ensure the package is built before publishing:',
+      '  npm run build',
+      '  or',
+      '  npx libsync build',
+    ]);
+  }
 }
 
 /**
  * Main publish staging command
  * Wraps Verdaccio to provide a local staging registry for testing packages
- * @param {import('../schemas/config.js').PublishStagingOptions} options - Command options
+ * @param {import('../schemas/commands-config.js').PublishStagingOptions} options - Command options
  */
 export async function publishStaging(options) {
   const isCI = process.env.CI === 'true';
@@ -595,9 +616,11 @@ export async function publishStaging(options) {
     const {
       port: requestedPort = 4873,
       path: packagePath = process.cwd(),
-      build: shouldBuild = true,
       reuseServer = true,
     } = options;
+
+    // Initialize config before any operations
+    await initConfig(packagePath);
 
     console.log(
       chalk.cyan(`\n🚀 ${chalk.bold('libsync')} - Staging Publisher`),
@@ -612,12 +635,8 @@ export async function publishStaging(options) {
     );
     console.log(chalk.green('   ✓ Package validated'));
 
-    // 2. Build package if requested
-    if (shouldBuild) {
-      await buildPackage(packagePath);
-    } else {
-      console.log(chalk.gray('⏭️  Skipping build (--no-build)'));
-    }
+    // 2. Check if package is built
+    checkPackageBuilt(packagePath);
 
     // 3. Setup Verdaccio server
     console.log(chalk.blue(`\n🔍 Checking port ${requestedPort}...`));

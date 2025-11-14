@@ -2,7 +2,7 @@
   "private": false,
   "name": "libsync",
   "description": "A CLI tool for library maintainers using tsup - build, develop, and publish with ease",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "license": "MIT",
   "author": {
     "name": "Marcos Fernandes",
@@ -15,25 +15,21 @@
   },
   "type": "module",
   "bin": {
-    "libsync": "./src/index.js",
-    "libsync build": "./src/commands/build.js",
-    "libsync clean": "./src/commands/clean.js",
-    "libsync dev": "./src/commands/dev.js",
-    "libsync publish-staging": "./src/commands/publish-staging.js"
+    "libsync": "./src/cli/index.js"
   },
-  "main": "src/index.js",
-  "module": "src/index.js",
-  "types": "src/index.js",
+  "main": "./src/index.js",
+  "module": "./src/index.js",
+  "types": "./src/index.js",
   "scripts": {
-    "build": "node src/index.js build",
-    "clean": "node src/index.js clean",
-    "dev": "concurrently --names \"dev-package-json,build\" --prefix-colors \"green,gray\" \"node src/index.js dev --watch\" \"node src/index.js build --watch\"",
-    "dev:watch": "node src/index.js dev --watch",
+    "build": "node src/cli/index.js build",
+    "clean": "node src/cli/index.js clean",
+    "dev": "concurrently --names \"dev-package-json,build\" --prefix-colors \"green,gray\" \"node src/cli/index.js dev --watch\" \"node src/cli/index.js build --watch\"",
+    "dev:watch": "node src/cli/index.js dev --watch",
     "format": "prettier --check \"src/**/*.{js,ts,json,md}\"",
     "format:fix": "prettier --write \"src/**/*.{js,ts,json,md}\"",
     "lint": "eslint \"src/**/*.{js,ts}\"",
     "lint:fix": "eslint \"src/**/*.{js,ts}\" --fix",
-    "publish:staging": "node src/index.js publish:staging --force",
+    "publish:staging": "node src/cli/index.js publish:staging --force",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -43,6 +39,7 @@
     "cross-spawn": "^7.0.3",
     "fs-extra": "^11.2.0",
     "glob": "^10.3.10",
+    "minimatch": "^10.1.1",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.0",
     "zod": "^3.22.4"
@@ -64,10 +61,35 @@
     "typescript": "^5.3.3"
   },
   "exports": {
-    "./schemas/config": {
-      "types": "./src/schemas/config.js",
-      "import": "./src/schemas/config.js",
-      "require": "./src/schemas/config.js"
+    "./cli": {
+      "types": "./src/cli/index.js",
+      "import": "./src/cli/index.js",
+      "require": "./src/cli/index.js"
+    },
+    "./config": {
+      "types": "./src/config/index.js",
+      "import": "./src/config/index.js",
+      "require": "./src/config/index.js"
+    },
+    ".": {
+      "types": "./src/index.js",
+      "import": "./src/index.js",
+      "require": "./src/index.js"
+    },
+    "./schemas/commands-config": {
+      "types": "./src/schemas/commands-config.js",
+      "import": "./src/schemas/commands-config.js",
+      "require": "./src/schemas/commands-config.js"
+    },
+    "./schemas": {
+      "types": "./src/schemas/index.js",
+      "import": "./src/schemas/index.js",
+      "require": "./src/schemas/index.js"
+    },
+    "./utils/config": {
+      "types": "./src/utils/config.js",
+      "import": "./src/utils/config.js",
+      "require": "./src/utils/config.js"
     },
     "./utils/input": {
       "types": "./src/utils/input.js",
@@ -78,6 +100,11 @@
       "types": "./src/utils/package.js",
       "import": "./src/utils/package.js",
       "require": "./src/utils/package.js"
+    },
+    "./utils/patterns": {
+      "types": "./src/utils/patterns.js",
+      "import": "./src/utils/patterns.js",
+      "require": "./src/utils/patterns.js"
     },
     "./utils/validation": {
       "types": "./src/utils/validation.js",
