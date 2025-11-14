@@ -180,6 +180,159 @@ pnpm build
 
 ## ⚙️ Configuration
 
+### libsync.config.mjs
+
+`libsync` supports a configuration file to customize build heuristics and behaviors. Create a `libsync.config.mjs` file in your project root to override default settings.
+
+#### Basic Configuration
+
+```javascript
+// libsync.config.mjs
+export default {
+  directories: {
+    source: 'src',
+    cjs: 'dist/cjs',
+    esm: 'dist/esm',
+  },
+  typescript: {
+    configFile: 'tsconfig.json',
+    buildConfigFile: 'tsconfig.build.json',
+    buildCacheFile: '.cache/tsbuildinfo.json',
+  },
+  files: {
+    // Don't build test files at all
+    ignoreBuildPaths: ['**/*.test.*', '**/*.spec.*', '**/__tests__/**'],
+    // For CLI-only packages: build index but don't export it (removes "." export)
+    ignoreExportPaths: ['index.*'],
+    // Or for mixed packages: build CLI commands but don't export them
+    // ignoreExportPaths: ['commands/**'],
+  },
+};
+```
+
+#### Available Options
+
+**directories** - Configure build directory structure
+- `source` (default: `'src'`) - Source directory
+- `cjs` (default: `'cjs'`) - CommonJS output directory
+- `esm` (default: `'esm'`) - ESM output directory
+
+**typescript** - TypeScript configuration paths
+- `configFile` (default: `'tsconfig.json'`) - Main TypeScript config
+- `buildConfigFile` (default: `'tsconfig.build.json'`) - Build-specific config
+- `buildCacheFile` (default: `'.cache/tsbuildinfo.json'`) - tsc build cache location
+
+**files** - File pattern configuration
+- `extensions` (default: `['.js', '.jsx', '.ts', '.tsx', '.cjs', '.mjs', '.cts', '.mts']`) - Recognized file extensions for source files and index files
+- `ignoreBuildPaths` (default: `['**/*.test.*', '**/*.spec.*', '**/__tests__/**']`) - Paths to completely ignore during build. Files matching these patterns won't be compiled by TypeScript/tsup, won't have proxy packages generated, and won't be included in the exports map. **Patterns are relative to source directory** (e.g., `'index.*'`, `'utils/helper.ts'`). The `src/` prefix is automatically stripped if present.
+- `ignoreExportPaths` (default: `[]`) - Paths to ignore only for exports. Files matching these patterns will still be compiled by TypeScript/tsup, but won't have proxy packages generated and won't be included in the exports map. **Useful for CLI-only packages**: Use `'index.*'` to build the index but remove the `"."` export and `main`/`module`/`types` fields. Use `'commands/**'` to build CLI commands without exporting them as library imports.
+
+**commands.build** - Build command configuration
+
+**commands.build.tsup** - tsup build configuration
+
+Option 1: Universal configuration (applies to all formats)
+```javascript
+export default {
+  commands: {
+    build: {
+      tsup: {
+        splitting: true,
+        treeshake: true,
+        minify: true,
+      },
+    },
+  },
+};
+```
+
+Option 2: Format-specific configuration
+```javascript
+export default {
+  commands: {
+    build: {
+      tsup: {
+        default: { splitting: true }, // Fallback for all formats
+        esm: { format: 'esm', splitting: true }, // ESM-specific
+        cjs: { format: 'cjs', splitting: false }, // CJS-specific
+      },
+    },
+  },
+};
+```
+
+#### TypeScript Support
+
+For full TypeScript support, import the config type:
+
+```typescript
+// libsync.config.mjs
+import type { LibsyncConfig } from 'libsync/config';
+
+const config: LibsyncConfig = {
+  directories: {
+    source: 'src',
+  },
+};
+
+export default config;
+```
+
+#### Configuration Priority
+
+`libsync` respects the following priority for build configuration:
+
+1. **libsync.config.mjs** (`commands.build.tsup`) - Highest priority
+2. **tsup.config.mjs** / **tsup.config.js** - Backward compatibility
+3. **Default settings** - Built-in defaults
+
+This ensures backward compatibility with existing `tsup.config.mjs` files while providing a centralized configuration approach.
+
+#### Migration from tsup.config.mjs
+
+If you have an existing `tsup.config.mjs`:
+
+**Before:**
+```javascript
+// tsup.config.mjs
+export default {
+  splitting: true,
+  treeshake: true,
+};
+
+export const esm = {
+  format: 'esm',
+  splitting: true,
+};
+
+export const cjs = {
+  format: 'cjs',
+  splitting: false,
+};
+```
+
+**After:**
+```javascript
+// libsync.config.mjs
+export default {
+  commands: {
+    build: {
+      tsup: {
+        default: { splitting: true, treeshake: true },
+        esm: { format: 'esm', splitting: true },
+        cjs: { format: 'cjs', splitting: false },
+      },
+    },
+  },
+};
+```
+
+You can keep using `tsup.config.mjs` if preferred - both approaches work, but `libsync.config.mjs` takes precedence.
+
+#### Complete Example
+
+See [`docs/libsync.config.example.mjs`](./packages/cli/docs/libsync.config.example.mjs) for a fully documented configuration example with all available options.
+
 ### Package.json Structure
 
 For dual-purpose packages (both CLI and library):

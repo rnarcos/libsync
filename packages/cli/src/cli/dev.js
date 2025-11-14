@@ -11,10 +11,13 @@ import {
   shouldProcessInDev,
   readPackageJson,
   writePackageJson,
+  makeProxies,
+  makeGitignore,
   PackageError,
   ConfigurationError,
   groupPathsByPackage,
 } from '../utils/package.js';
+import { initConfig } from '../utils/config.js';
 
 /**
  * Dev options type definition
@@ -144,6 +147,9 @@ export async function devCommand(options) {
  */
 async function processCurrentPackage(packagePath, verbose) {
   try {
+    // Initialize config before processing package
+    await initConfig(packagePath);
+
     const packageInfo = analyzePackage(packagePath);
 
     if (!packageInfo.isValid) {
@@ -164,10 +170,15 @@ async function processCurrentPackage(packagePath, verbose) {
       return;
     }
 
-    writePackageJson(packagePath);
+    writePackageJson(packagePath, false); // false = dev mode
+    makeProxies(packagePath, false); // Generate dev proxies pointing to src/
+    makeGitignore(packagePath); // Update .gitignore with proxies (if writeToGitIgnore is true)
     console.log(chalk.green(`   ✅ Updated ${packageInfo.name}`));
 
     if (verbose) {
+      console.log(
+        chalk.gray(`   Dev mode: package.json and proxies point to src/`),
+      );
       console.log(
         chalk.gray(`   Package: ${packageInfo.name} at ${packagePath}`),
       );
@@ -215,6 +226,8 @@ async function startWatchMode(packagePath, verbose) {
       }
 
       writePackageJson(packagePath);
+      makeProxies(packagePath, false);
+      makeGitignore(packagePath);
       console.log(chalk.blue(`🔄 Updated ${packageInfo.name} (${filePath})`));
     } catch (error) {
       console.warn(
@@ -285,6 +298,8 @@ async function startWatchModeForMultiplePackages(packagePaths, verbose) {
         }
 
         writePackageJson(packagePath);
+        makeProxies(packagePath, false);
+        makeGitignore(packagePath);
         console.log(chalk.blue(`🔄 Updated ${pkgInfo.name} (${filePath})`));
       } catch (error) {
         console.warn(

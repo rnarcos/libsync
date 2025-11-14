@@ -9,6 +9,7 @@ import {
   PackageError,
   ConfigurationError,
 } from '../utils/package.js';
+import { initConfig } from '../utils/config.js';
 
 /**
  * Clean options type definition
@@ -24,6 +25,9 @@ import {
  */
 export async function cleanCommand(options) {
   const { path: packagePath, verbose } = options;
+
+  // Initialize config before any operations
+  await initConfig(packagePath);
 
   console.log(chalk.blue(`🧹 Cleaning build artifacts at: ${packagePath}`));
 

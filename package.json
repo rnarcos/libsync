@@ -67,7 +67,6 @@
     "npm-package-json-lint-config-default": "^6.0.0",
     "prettier": "^3.2.5",
     "turbo": "^2.3.4",
-    "typescript": "^5.3.3",
-    "verdaccio": "^6.1.2"
+    "typescript": "^5.3.3"
   }
 }
