@@ -38,7 +38,24 @@
   "lint-staged": {
     "*.+(ts|tsx|js)": [
       "npx eslint --fix",
-      "npx prettier --write",
+      "npx prettier --write"
+    ],
+    "packages/*/package.json": [
+      "npx libsync dev"
+    ],
+    "packages/*/src/*": [
+      "npx libsync dev"
+    ],
+    "recipes/*/package.json": [
+      "npx libsync dev"
+    ],
+    "recipes/*/src/*": [
+      "npx libsync dev"
+    ],
+    "configs/*/package.json": [
+      "npx libsync dev"
+    ],
+    "configs/*/src/*": [
       "npx libsync dev"
     ],
     "package.json": [

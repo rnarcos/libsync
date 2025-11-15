@@ -94,6 +94,7 @@ jobs:
 
       - name: Commit version updates
         run: |
+          pnpm dev:package-json
           git add -A
           git diff --staged --quiet || git commit -m "[skip ci] - Updating packages versions"
           git push
