@@ -35,11 +35,25 @@ export const commandsConfigSchema = {
     verbose: z.boolean().default(false),
   }),
 
-  dev: z.object({
-    watch: z.boolean().default(false),
-    path: validPath.default(process.cwd()),
-    verbose: z.boolean().default(false),
-  }),
+  packageJson: z
+    .object({
+      mode: z.enum(['production', 'development']).default('development'),
+      watch: z.boolean().default(false),
+      path: validPath.default(process.cwd()),
+      verbose: z.boolean().default(false),
+      check: z.boolean().default(false),
+      write: z.boolean().default(true),
+    })
+    .refine(
+      (data) => {
+        // check and write cannot both be true
+        return !(data.check && data.write);
+      },
+      {
+        message:
+          'Cannot use both check and write modes. Set check to true for validation only, or write to true to update files.',
+      },
+    ),
 
   publishStaging: z.object({
     port: z.number().int().min(1024).max(65535).default(4873),
@@ -116,11 +130,14 @@ export const tsConfigSchema = z.object({
  */
 
 /**
- * Dev options type definition
- * @typedef {Object} DevOptions
+ * Package.json options type definition
+ * @typedef {Object} PackageJsonOptions
+ * @property {string} mode - Mode: 'production' or 'development'
  * @property {boolean} watch - Watch for file changes
  * @property {string} path - Package path to process
  * @property {boolean} verbose - Enable verbose logging
+ * @property {boolean} check - Check mode: validate without writing
+ * @property {boolean} write - Write mode: update package.json files
  */
 
 /**
