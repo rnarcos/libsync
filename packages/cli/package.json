@@ -15,16 +15,16 @@
   },
   "type": "module",
   "bin": {
-    "libsync": "./cjs/cli/index.cjs"
+    "libsync": "./src/cli/index.js"
   },
-  "main": "./cjs/index.cjs",
-  "module": "./esm/index.js",
-  "types": "./esm/index.d.ts",
+  "main": "./src/index.js",
+  "module": "./src/index.js",
+  "types": "./src/index.js",
   "scripts": {
     "build": "node src/cli/index.js build",
     "clean": "node src/cli/index.js clean",
-    "dev": "concurrently --names \"dev-package-json,build\" --prefix-colors \"green,gray\" \"node src/cli/index.js dev --watch\" \"node src/cli/index.js build --watch\"",
-    "dev:watch": "node src/cli/index.js dev --watch",
+    "dev": "concurrently --names \"dev-package-json,build\" --prefix-colors \"green,gray\" \"node src/cli/index.js package-json --mode development --watch\" \"node src/cli/index.js build --watch\"",
+    "dev:watch": "node src/cli/index.js package-json --watch",
     "format": "prettier --check \"src/**/*.{js,ts,json,md}\"",
     "format:fix": "prettier --write \"src/**/*.{js,ts,json,md}\"",
     "lint": "eslint \"src/**/*.{js,ts}\"",
@@ -62,54 +62,54 @@
   },
   "exports": {
     "./cli": {
-      "types": "./esm/cli/index.d.ts",
-      "import": "./esm/cli/index.js",
-      "require": "./cjs/cli/index.cjs"
+      "types": "./src/cli/index.js",
+      "import": "./src/cli/index.js",
+      "require": "./src/cli/index.js"
     },
     "./config": {
-      "types": "./esm/config/index.d.ts",
-      "import": "./esm/config/index.js",
-      "require": "./cjs/config/index.cjs"
+      "types": "./src/config/index.js",
+      "import": "./src/config/index.js",
+      "require": "./src/config/index.js"
     },
     ".": {
-      "types": "./esm/index.d.ts",
-      "import": "./esm/index.js",
-      "require": "./cjs/index.cjs"
+      "types": "./src/index.js",
+      "import": "./src/index.js",
+      "require": "./src/index.js"
     },
     "./schemas/commands-config": {
-      "types": "./esm/schemas/commands-config.d.ts",
-      "import": "./esm/schemas/commands-config.js",
-      "require": "./cjs/schemas/commands-config.cjs"
+      "types": "./src/schemas/commands-config.js",
+      "import": "./src/schemas/commands-config.js",
+      "require": "./src/schemas/commands-config.js"
     },
     "./schemas": {
-      "types": "./esm/schemas/index.d.ts",
-      "import": "./esm/schemas/index.js",
-      "require": "./cjs/schemas/index.cjs"
+      "types": "./src/schemas/index.js",
+      "import": "./src/schemas/index.js",
+      "require": "./src/schemas/index.js"
     },
     "./utils/config": {
-      "types": "./esm/utils/config.d.ts",
-      "import": "./esm/utils/config.js",
-      "require": "./cjs/utils/config.cjs"
+      "types": "./src/utils/config.js",
+      "import": "./src/utils/config.js",
+      "require": "./src/utils/config.js"
     },
     "./utils/input": {
-      "types": "./esm/utils/input.d.ts",
-      "import": "./esm/utils/input.js",
-      "require": "./cjs/utils/input.cjs"
+      "types": "./src/utils/input.js",
+      "import": "./src/utils/input.js",
+      "require": "./src/utils/input.js"
     },
     "./utils/package": {
-      "types": "./esm/utils/package.d.ts",
-      "import": "./esm/utils/package.js",
-      "require": "./cjs/utils/package.cjs"
+      "types": "./src/utils/package.js",
+      "import": "./src/utils/package.js",
+      "require": "./src/utils/package.js"
     },
     "./utils/patterns": {
-      "types": "./esm/utils/patterns.d.ts",
-      "import": "./esm/utils/patterns.js",
-      "require": "./cjs/utils/patterns.cjs"
+      "types": "./src/utils/patterns.js",
+      "import": "./src/utils/patterns.js",
+      "require": "./src/utils/patterns.js"
     },
     "./utils/validation": {
-      "types": "./esm/utils/validation.d.ts",
-      "import": "./esm/utils/validation.js",
-      "require": "./cjs/utils/validation.cjs"
+      "types": "./src/utils/validation.js",
+      "import": "./src/utils/validation.js",
+      "require": "./src/utils/validation.js"
     },
     "./package.json": "./package.json"
   }

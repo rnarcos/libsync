@@ -1,6 +1,6 @@
 /**
- * @fileoverview Dev command implementation
- * Development package.json generation with monorepo and single-repo support
+ * @fileoverview Package.json command implementation
+ * Package.json generation with monorepo and single-repo support for production and development modes
  */
 
 import { basename } from 'path';
@@ -20,12 +20,15 @@ import {
 import { initConfig } from '../utils/config.js';
 
 /**
- * Dev options type definition
- * @typedef {Object} DevOptions
+ * Package.json options type definition
+ * @typedef {Object} PackageJsonOptions
+ * @property {string} mode - Mode: 'production' or 'development'
  * @property {boolean} watch - Watch for file changes
  * @property {string} path - Package path to process
  * @property {string[]} [paths] - Multiple paths to process (optional)
  * @property {boolean} verbose - Enable verbose logging
+ * @property {boolean} check - Check mode: validate without writing
+ * @property {boolean} write - Write mode: update package.json files
  */
 
 /**
@@ -38,12 +41,25 @@ import { initConfig } from '../utils/config.js';
  */
 
 /**
- * Dev command implementation - processes packages based on provided paths
- * @param {DevOptions} options - Dev command options
- * @returns {Promise<void>} Dev completion promise
+ * Package.json command implementation - processes packages based on provided paths
+ * @param {PackageJsonOptions} options - Package.json command options
+ * @returns {Promise<void>} Processing completion promise
  */
-export async function devCommand(options) {
-  const { watch: watchMode, path: packagePath, paths, verbose } = options;
+export async function packageJsonCommand(options) {
+  const {
+    watch: watchMode,
+    path: packagePath,
+    paths,
+    verbose,
+    mode,
+    check,
+    write,
+  } = options;
+
+  // Check mode cannot be used with watch mode
+  if (check && watchMode) {
+    throw new Error('Cannot use --check with --watch mode');
+  }
 
   try {
     // If multiple paths are provided, group them by package and process each
@@ -77,35 +93,52 @@ export async function devCommand(options) {
           });
         }
 
-        await processCurrentPackage(pkgPath, verbose);
+        await processCurrentPackage(pkgPath, mode, verbose, check, write);
       }
 
       if (watchMode) {
         console.log(chalk.blue('\n👀 Starting watch mode for all packages...'));
         await startWatchModeForMultiplePackages(
           Array.from(packageGroups.keys()),
+          mode,
           verbose,
         );
       } else {
         console.log(
           chalk.green(
-            '\n✅ Development package.json processing completed for all packages!',
+            `\n✅ ${mode.charAt(0).toUpperCase() + mode.slice(1)} package.json processing completed for all packages!`,
           ),
         );
       }
     } else {
       // Single package mode (original behavior)
-      console.log(chalk.blue(`📦 Processing development package.json...`));
+      if (check) {
+        console.log(
+          chalk.blue(`📦 Checking ${mode} package.json configuration...`),
+        );
+      } else {
+        console.log(chalk.blue(`📦 Processing ${mode} package.json...`));
+      }
       console.log(chalk.gray(`   Package path: ${packagePath}`));
 
-      await processCurrentPackage(packagePath, verbose);
+      await processCurrentPackage(packagePath, mode, verbose, check, write);
 
       if (watchMode) {
-        await startWatchMode(packagePath, verbose);
+        await startWatchMode(packagePath, mode, verbose);
       } else {
-        console.log(
-          chalk.green('✅ Development package.json processing completed!'),
-        );
+        if (check) {
+          console.log(
+            chalk.green(
+              `✅ ${mode.charAt(0).toUpperCase() + mode.slice(1)} package.json check passed!`,
+            ),
+          );
+        } else {
+          console.log(
+            chalk.green(
+              `✅ ${mode.charAt(0).toUpperCase() + mode.slice(1)} package.json processing completed!`,
+            ),
+          );
+        }
         console.log(chalk.gray(`   Package path: ${packagePath}`));
       }
     }
@@ -142,10 +175,19 @@ export async function devCommand(options) {
 /**
  * Process the current package
  * @param {string} packagePath - Package path
+ * @param {string} mode - Mode: 'production' or 'development'
  * @param {boolean} verbose - Enable verbose logging
+ * @param {boolean} check - Check mode: validate without writing
+ * @param {boolean} write - Write mode: update package.json files
  * @returns {Promise<void>} Processing promise
  */
-async function processCurrentPackage(packagePath, verbose) {
+async function processCurrentPackage(
+  packagePath,
+  mode,
+  verbose,
+  check = false,
+  write = true,
+) {
   try {
     // Initialize config before processing package
     await initConfig(packagePath);
@@ -170,14 +212,29 @@ async function processCurrentPackage(packagePath, verbose) {
       return;
     }
 
-    writePackageJson(packagePath, false); // false = dev mode
-    makeProxies(packagePath, false); // Generate dev proxies pointing to src/
-    makeGitignore(packagePath); // Update .gitignore with proxies (if writeToGitIgnore is true)
-    console.log(chalk.green(`   ✅ Updated ${packageInfo.name}`));
+    const hasChanges = writePackageJson(packagePath, mode, check);
+
+    if (check) {
+      // In check mode, we validate without writing
+      if (!hasChanges) {
+        console.log(chalk.green(`   ✅ ${packageInfo.name} is up to date`));
+      } else {
+        throw new PackageError(
+          `Package.json for ${packageInfo.name} does not match expected ${mode} configuration`,
+        );
+      }
+    } else {
+      // In write mode, update everything
+      makeProxies(packagePath, mode === 'production');
+      makeGitignore(packagePath); // Update .gitignore with proxies (if writeToGitIgnore is true)
+      console.log(chalk.green(`   ✅ Updated ${packageInfo.name}`));
+    }
 
     if (verbose) {
       console.log(
-        chalk.gray(`   Dev mode: package.json and proxies point to src/`),
+        chalk.gray(
+          `   ${mode.charAt(0).toUpperCase() + mode.slice(1)} mode: package.json and proxies point to ${mode === 'production' ? 'build output' : 'src/'}`,
+        ),
       );
       console.log(
         chalk.gray(`   Package: ${packageInfo.name} at ${packagePath}`),
@@ -193,10 +250,11 @@ async function processCurrentPackage(packagePath, verbose) {
 /**
  * Start watch mode for file changes in the current package
  * @param {string} packagePath - Package path
+ * @param {string} mode - Mode: 'production' or 'development'
  * @param {boolean} verbose - Enable verbose logging
  * @returns {Promise<void>} Watch mode promise
  */
-async function startWatchMode(packagePath, verbose) {
+async function startWatchMode(packagePath, mode, verbose) {
   console.log(chalk.blue('\n👀 Starting watch mode...'));
   console.log(chalk.yellow('Press Ctrl+C to stop watching\n'));
 
@@ -225,8 +283,8 @@ async function startWatchMode(packagePath, verbose) {
         return;
       }
 
-      writePackageJson(packagePath);
-      makeProxies(packagePath, false);
+      writePackageJson(packagePath, mode);
+      makeProxies(packagePath, mode === 'production');
       makeGitignore(packagePath);
       console.log(chalk.blue(`🔄 Updated ${packageInfo.name} (${filePath})`));
     } catch (error) {
@@ -256,10 +314,11 @@ async function startWatchMode(packagePath, verbose) {
 /**
  * Start watch mode for multiple packages
  * @param {string[]} packagePaths - Array of package paths
+ * @param {string} mode - Mode: 'production' or 'development'
  * @param {boolean} verbose - Enable verbose logging
  * @returns {Promise<void>} Watch mode promise
  */
-async function startWatchModeForMultiplePackages(packagePaths, verbose) {
+async function startWatchModeForMultiplePackages(packagePaths, mode, verbose) {
   console.log(chalk.blue('\n👀 Starting watch mode for multiple packages...'));
   console.log(chalk.yellow('Press Ctrl+C to stop watching\n'));
 
@@ -297,8 +356,8 @@ async function startWatchModeForMultiplePackages(packagePaths, verbose) {
           return;
         }
 
-        writePackageJson(packagePath);
-        makeProxies(packagePath, false);
+        writePackageJson(packagePath, mode);
+        makeProxies(packagePath, mode === 'production');
         makeGitignore(packagePath);
         console.log(chalk.blue(`🔄 Updated ${pkgInfo.name} (${filePath})`));
       } catch (error) {

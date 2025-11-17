@@ -358,7 +358,7 @@ export function validateWorkspaceStructure(rootPath, workspaces) {
 /**
  * Main project structure validation
  * @param {string} projectPath - Path to the project directory
- * @param {'build' | 'clean' | 'dev'} command - Command being executed
+ * @param {'build' | 'clean' | 'package-json'} command - Command being executed
  * @returns {Promise<void>} Validation promise
  */
 export async function checkProjectStructure(projectPath, command) {
@@ -375,7 +375,7 @@ export async function checkProjectStructure(projectPath, command) {
   /** @type {string[]} */
   const allWarnings = [];
 
-  if (command === 'dev') {
+  if (command === 'package-json') {
     // For dev command, we might be in a monorepo root
     const rootPackageJson = join(projectPath, 'package.json');
     if (existsSync(rootPackageJson)) {

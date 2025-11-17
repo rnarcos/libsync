@@ -9,7 +9,7 @@ import { program } from 'commander';
 import chalk from 'chalk';
 import { buildCommand } from './build.js';
 import { cleanCommand } from './clean.js';
-import { devCommand } from './dev.js';
+import { packageJsonCommand } from './package-json.js';
 import { publishStaging } from './publish-staging.js';
 import { commandsConfigSchema } from '../schemas/index.js';
 import {
@@ -144,20 +144,39 @@ program
   });
 
 program
-  .command('dev [paths...]')
+  .command('package-json [paths...]')
   .description(
-    'Generate development package.json for packages (accepts multiple paths)',
+    'Generate package.json for packages in production or development mode (accepts multiple paths)',
   )
+  .option('-m, --mode <mode>', 'Mode: production or development', 'development')
   .option('-w, --watch', 'Watch for file changes', false)
   .option(
     '-p, --path <path>',
     'Package path to process (single package mode)',
     process.cwd(),
   )
+  .option(
+    '--check',
+    'Check if package.json matches expected content without writing',
+    false,
+  )
+  .option('--write', 'Write package.json (default behavior)', true)
   .action(async (pathsArg, options, cmd) => {
     const globalOptions = cmd.parent?.opts() || {};
 
     try {
+      // Validate mode
+      if (!['production', 'development'].includes(options.mode)) {
+        throw new Error(
+          `Invalid mode: ${options.mode}. Must be 'production' or 'development'`,
+        );
+      }
+
+      // If check is true, write must be false
+      if (options.check) {
+        options.write = false;
+      }
+
       // If paths are provided as arguments, use those; otherwise use the -p flag
       const shouldUseMultipleMode = pathsArg && pathsArg.length > 0;
 
@@ -190,45 +209,58 @@ program
         }
 
         const validatedOptions = {
+          mode: options.mode,
           watch: options.watch || false,
           path: process.cwd(), // Fallback, not used in multi-path mode
           paths: validPaths,
           verbose: globalOptions.verbose || false,
+          check: options.check || false,
+          write: options.write !== false, // Default to true unless explicitly false
         };
 
-        await devCommand(validatedOptions);
+        await packageJsonCommand(validatedOptions);
 
         if (validatedOptions.watch) {
-          console.log(chalk.green(`\n✅ Dev mode started with file watching!`));
+          console.log(
+            chalk.green(
+              `\n✅ ${options.mode.charAt(0).toUpperCase() + options.mode.slice(1)} mode started with file watching!`,
+            ),
+          );
           console.log(chalk.yellow('   Press Ctrl+C to stop watching...\n'));
           // Keep process running for watch mode
         }
       } else {
         // Single package mode (original behavior)
-        const validatedOptions = commandsConfigSchema.dev.parse({
+        const validatedOptions = commandsConfigSchema.packageJson.parse({
           ...options,
           verbose: globalOptions.verbose,
         });
 
         console.log(chalk.blue('📦 Processing current package'));
-        await checkProjectStructure(validatedOptions.path, 'dev');
+        await checkProjectStructure(validatedOptions.path, 'package-json');
 
-        await devCommand(validatedOptions);
+        await packageJsonCommand(validatedOptions);
 
         if (validatedOptions.watch) {
-          console.log(chalk.green(`\n✅ Dev mode started with file watching!`));
+          console.log(
+            chalk.green(
+              `\n✅ ${options.mode.charAt(0).toUpperCase() + options.mode.slice(1)} mode started with file watching!`,
+            ),
+          );
           console.log(chalk.gray(`   Root path: ${validatedOptions.path}`));
           console.log(chalk.yellow('   Press Ctrl+C to stop watching...\n'));
           // Keep process running for watch mode
         } else {
           console.log(
-            chalk.green('✅ Development package.json processing completed!'),
+            chalk.green(
+              `✅ ${options.mode.charAt(0).toUpperCase() + options.mode.slice(1)} package.json processing completed!`,
+            ),
           );
           console.log(chalk.gray(`   Root path: ${validatedOptions.path}`));
         }
       }
     } catch (error) {
-      console.error(chalk.red('\n❌ Dev command failed:'));
+      console.error(chalk.red('\n❌ Package-json command failed:'));
 
       if (error instanceof Error) {
         console.error(chalk.red(`   ${error.message}`));

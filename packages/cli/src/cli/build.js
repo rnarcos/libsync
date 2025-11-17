@@ -148,7 +148,7 @@ export async function buildCommand(options) {
       chalk.gray('📝 Step 8: Finalizing package.json for production...'),
     );
     try {
-      writePackageJson(packagePath, true);
+      writePackageJson(packagePath, 'production');
     } catch (finalError) {
       // If final step fails, ensure package.json is in dev mode
       console.error(
@@ -156,7 +156,7 @@ export async function buildCommand(options) {
           '❌ Failed to finalize package.json, reverting to dev mode...',
         ),
       );
-      writePackageJson(packagePath, false);
+      writePackageJson(packagePath, 'development');
       throw finalError;
     }
 
@@ -174,7 +174,7 @@ export async function buildCommand(options) {
       console.error(
         chalk.yellow('🔄 Reverting package.json to development mode...'),
       );
-      writePackageJson(packagePath, false);
+      writePackageJson(packagePath, 'development');
     } catch {
       console.error(chalk.red('⚠️  Failed to revert package.json to dev mode'));
     }

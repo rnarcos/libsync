@@ -9,14 +9,14 @@ import {
   readFileSync,
   readdirSync,
   writeFileSync,
-} from "fs";
-import { join, resolve, dirname, sep } from "path";
-import chalk from "chalk";
-import fse from "fs-extra";
-import { rimraf } from "rimraf";
-import { packageJsonSchema } from "../schemas/commands-config.js";
-import { getConfig } from "./config.js";
-import { matchesAnyPattern } from "./patterns.js";
+} from 'fs';
+import { join, resolve, dirname, sep } from 'path';
+import chalk from 'chalk';
+import fse from 'fs-extra';
+import { rimraf } from 'rimraf';
+import { packageJsonSchema } from '../schemas/commands-config.js';
+import { getConfig } from './config.js';
+import { matchesAnyPattern } from './patterns.js';
 
 /**
  * Custom error class for package-related errors
@@ -28,7 +28,7 @@ export class PackageError extends Error {
    */
   constructor(message, packagePath) {
     super(message);
-    this.name = "PackageError";
+    this.name = 'PackageError';
     /** @readonly */
     this.packagePath = packagePath;
   }
@@ -44,7 +44,7 @@ export class ConfigurationError extends Error {
    */
   constructor(message, suggestions = []) {
     super(message);
-    this.name = "ConfigurationError";
+    this.name = 'ConfigurationError';
     /** @readonly */
     this.suggestions = suggestions;
   }
@@ -69,7 +69,7 @@ function isDirectory(path) {
  * @returns {string} Path without extension
  */
 export function removeExt(path) {
-  return path.replace(/\.[^.]+$/, "");
+  return path.replace(/\.[^.]+$/, '');
 }
 
 /**
@@ -83,7 +83,7 @@ function readJsonFile(filePath) {
   }
 
   try {
-    const content = readFileSync(filePath, "utf-8");
+    const content = readFileSync(filePath, 'utf-8');
     return JSON.parse(content);
   } catch (error) {
     if (error instanceof SyntaxError) {
@@ -104,7 +104,7 @@ function readJsonFile(filePath) {
  */
 export function readPackageJson(rootPath) {
   const packagePath = resolve(rootPath);
-  const pkgPath = join(packagePath, "package.json");
+  const pkgPath = join(packagePath, 'package.json');
 
   try {
     const rawPackageJson = readJsonFile(pkgPath);
@@ -112,16 +112,16 @@ export function readPackageJson(rootPath) {
 
     if (!validationResult.success) {
       const errorMessages = validationResult.error.issues.map(
-        (issue) => `${issue.path.join(".")}: ${issue.message}`,
+        (issue) => `${issue.path.join('.')}: ${issue.message}`,
       );
 
       throw new ConfigurationError(
-        `Invalid package.json at ${pkgPath}:\n${errorMessages.map((msg) => `  • ${msg}`).join("\n")}`,
+        `Invalid package.json at ${pkgPath}:\n${errorMessages.map((msg) => `  • ${msg}`).join('\n')}`,
         [
           'Ensure package.json has a valid "name" field',
           'Add "main", "module", or "bin" fields for buildable packages',
           'Consider adding "type": "module" for ES module packages',
-          "Verify all field values match expected formats",
+          'Verify all field values match expected formats',
         ],
       );
     }
@@ -156,7 +156,7 @@ export function findClosestPackageJson(startPath) {
     // Traverse up the directory tree
     const root = resolve(sep); // System root directory
     while (currentPath !== root) {
-      const packageJsonPath = join(currentPath, "package.json");
+      const packageJsonPath = join(currentPath, 'package.json');
 
       if (existsSync(packageJsonPath)) {
         return currentPath;
@@ -217,7 +217,7 @@ export function groupPathsByPackage(paths) {
 export function isBinaryPackage(rootPath) {
   try {
     const pkg = readPackageJson(rootPath);
-    return typeof pkg.bin !== "undefined";
+    return typeof pkg.bin !== 'undefined';
   } catch (error) {
     console.warn(
       chalk.yellow(
@@ -237,7 +237,7 @@ export function isPureCLIPackage(rootPath) {
   try {
     const pkg = readPackageJson(rootPath);
     // Pure CLI: has bin but no main/module fields
-    return typeof pkg.bin !== "undefined" && !pkg.main && !pkg.module;
+    return typeof pkg.bin !== 'undefined' && !pkg.main && !pkg.module;
   } catch (error) {
     console.warn(
       chalk.yellow(
@@ -318,7 +318,7 @@ export function getPackageBuilds(rootPath) {
 
     if (Object.keys(builds).length === 0) {
       throw new ConfigurationError(
-        "No build formats detected in package.json",
+        'No build formats detected in package.json',
         [
           'Add "main" field for CommonJS output',
           'Add "module" field for ESM output',
@@ -340,9 +340,9 @@ export function getPackageBuilds(rootPath) {
 }
 
 // Standard directory names
-export const getSourceDir = () => getConfig()?.directories?.source || "src";
-export const getESMDir = () => getConfig()?.directories?.esm || "esm";
-export const getCJSDir = () => getConfig()?.directories?.cjs || "cjs";
+export const getSourceDir = () => getConfig()?.directories?.source || 'src';
+export const getESMDir = () => getConfig()?.directories?.esm || 'esm';
+export const getCJSDir = () => getConfig()?.directories?.cjs || 'cjs';
 
 /**
  * Get source path with validation
@@ -354,16 +354,16 @@ export function getSourcePath(rootPath) {
 
   if (!existsSync(sourcePath)) {
     throw new ConfigurationError(`Source directory not found: ${sourcePath}`, [
-      "Create a src/ directory in your package root",
-      "Add your TypeScript/JavaScript source files to src/",
-      "Ensure src/index.ts, src/index.js, or src/index.cjs exists as the main entry point",
+      'Create a src/ directory in your package root',
+      'Add your TypeScript/JavaScript source files to src/',
+      'Ensure src/index.ts, src/index.js, or src/index.cjs exists as the main entry point',
     ]);
   }
 
   if (!isDirectory(sourcePath)) {
     throw new ConfigurationError(
       `Source path is not a directory: ${sourcePath}`,
-      ["Ensure src/ is a directory, not a file"],
+      ['Ensure src/ is a directory, not a file'],
     );
   }
 
@@ -376,7 +376,7 @@ export function getSourcePath(rootPath) {
  * @returns {string} Normalized path
  */
 function normalizePath(filePath) {
-  return filePath.replace(/\\/g, "/");
+  return filePath.replace(/\\/g, '/');
 }
 
 /**
@@ -405,15 +405,15 @@ function normalizeIgnorePatterns(patterns) {
  * @param {string} [relativePath=''] - Relative path from src (for pattern matching)
  * @returns {boolean} Whether the file should be built
  */
-function shouldBuild(rootPath, filename, relativePath = "") {
+function shouldBuild(rootPath, filename, relativePath = '') {
   const config = getConfig();
 
   // Check ignore patterns against the full relative path
   const ignoreBuildPaths = normalizeIgnorePatterns(
     config?.files?.ignoreBuildPaths || [
-      "**/*.test.*",
-      "**/*.spec.*",
-      "**/__tests__/**",
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/__tests__/**',
     ],
   );
 
@@ -433,18 +433,18 @@ function shouldBuild(rootPath, filename, relativePath = "") {
 
   // Include JS/TS files
   const extensions = config?.files?.extensions || [
-    ".js",
-    ".jsx",
-    ".ts",
-    ".tsx",
-    ".cjs",
-    ".mjs",
-    ".cts",
-    ".mts",
+    '.js',
+    '.jsx',
+    '.ts',
+    '.tsx',
+    '.cjs',
+    '.mjs',
+    '.cts',
+    '.mts',
   ];
 
   const extensionPattern = new RegExp(
-    `(${extensions.map((e) => e.replace(".", "\\.")).join("|")})$`,
+    `(${extensions.map((e) => e.replace('.', '\\.')).join('|')})$`,
   );
   return extensionPattern.test(filename);
 }
@@ -456,7 +456,7 @@ function shouldBuild(rootPath, filename, relativePath = "") {
  * @param {string} [relativePath=''] - Relative path from src (for pattern matching)
  * @returns {boolean} Whether the file should be exported
  */
-function shouldExport(rootPath, filename, relativePath = "") {
+function shouldExport(rootPath, filename, relativePath = '') {
   const config = getConfig();
 
   // Build full relative path for pattern matching
@@ -465,9 +465,9 @@ function shouldExport(rootPath, filename, relativePath = "") {
   // Check build ignore patterns first (normalized)
   const ignoreBuildPaths = normalizeIgnorePatterns(
     config?.files?.ignoreBuildPaths || [
-      "**/*.test.*",
-      "**/*.spec.*",
-      "**/__tests__/**",
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/__tests__/**',
     ],
   );
 
@@ -493,18 +493,18 @@ function shouldExport(rootPath, filename, relativePath = "") {
 
   // Include JS/TS files
   const extensions = config?.files?.extensions || [
-    ".js",
-    ".jsx",
-    ".ts",
-    ".tsx",
-    ".cjs",
-    ".mjs",
-    ".cts",
-    ".mts",
+    '.js',
+    '.jsx',
+    '.ts',
+    '.tsx',
+    '.cjs',
+    '.mjs',
+    '.cts',
+    '.mts',
   ];
 
   const extensionPattern = new RegExp(
-    `(${extensions.map((e) => e.replace(".", "\\.")).join("|")})$`,
+    `(${extensions.map((e) => e.replace('.', '\\.')).join('|')})$`,
   );
   return extensionPattern.test(filename);
 }
@@ -515,27 +515,27 @@ function shouldExport(rootPath, filename, relativePath = "") {
  * @param {string} [prefix=''] - Path prefix for nested directories
  * @returns {Record<string, string>} All files mapping for build
  */
-export function getAllBuildFiles(sourcePath, prefix = "") {
+export function getAllBuildFiles(sourcePath, prefix = '') {
   if (!existsSync(sourcePath)) {
     throw new ConfigurationError(
       `Source directory does not exist: ${sourcePath}`,
-      ["Ensure the src/ directory exists and contains your source files"],
+      ['Ensure the src/ directory exists and contains your source files'],
     );
   }
 
   try {
     // Special handling for pure CLI packages (bin only, no library exports)
-    if (prefix === "" && isPureCLIPackage(join(sourcePath, ".."))) {
-      const indexPath = join(sourcePath, "index.ts");
-      if (!existsSync(indexPath) && !existsSync(join(sourcePath, "index.js"))) {
-        throw new ConfigurationError("Pure CLI package missing index file", [
-          "Create src/index.ts, src/index.js, or src/index.cjs as the main entry point",
-          "Ensure the file exports the main CLI functionality",
+    if (prefix === '' && isPureCLIPackage(join(sourcePath, '..'))) {
+      const indexPath = join(sourcePath, 'index.ts');
+      if (!existsSync(indexPath) && !existsSync(join(sourcePath, 'index.js'))) {
+        throw new ConfigurationError('Pure CLI package missing index file', [
+          'Create src/index.ts, src/index.js, or src/index.cjs as the main entry point',
+          'Ensure the file exports the main CLI functionality',
         ]);
       }
 
       return {
-        index: existsSync(indexPath) ? indexPath : join(sourcePath, "index.js"),
+        index: existsSync(indexPath) ? indexPath : join(sourcePath, 'index.js'),
       };
     }
 
@@ -544,13 +544,13 @@ export function getAllBuildFiles(sourcePath, prefix = "") {
       .sort(); // Ensure consistent order across platforms
 
     // Only throw error if root directory is empty, subdirectories can be empty
-    if (files.length === 0 && prefix === "") {
+    if (files.length === 0 && prefix === '') {
       throw new ConfigurationError(
         `No valid source files found in: ${sourcePath}`,
         [
-          "Add TypeScript (.ts, .tsx, .cts, .mts) or JavaScript (.js, .jsx, .cjs, .mjs) files to src/",
-          "Ensure files are not test files (avoid .test.* or .spec.* naming)",
-          "Create at least an index file (src/index.ts, src/index.js, or src/index.cjs)",
+          'Add TypeScript (.ts, .tsx, .cts, .mts) or JavaScript (.js, .jsx, .cjs, .mjs) files to src/',
+          'Ensure files are not test files (avoid .test.* or .spec.* naming)',
+          'Create at least an index file (src/index.ts, src/index.js, or src/index.cjs)',
         ],
       );
     }
@@ -579,7 +579,7 @@ export function getAllBuildFiles(sourcePath, prefix = "") {
     }
     throw new ConfigurationError(
       `Failed to analyze source files in ${sourcePath}: ${error instanceof Error ? error.message : String(error)}`,
-      ["Check file permissions and directory structure"],
+      ['Check file permissions and directory structure'],
     );
   }
 }
@@ -590,27 +590,27 @@ export function getAllBuildFiles(sourcePath, prefix = "") {
  * @param {string} [prefix=''] - Path prefix for nested directories
  * @returns {Record<string, string>} Mapping of export names to file paths
  */
-export function getPublicFiles(sourcePath, prefix = "") {
+export function getPublicFiles(sourcePath, prefix = '') {
   if (!existsSync(sourcePath)) {
     throw new ConfigurationError(
       `Source directory does not exist: ${sourcePath}`,
-      ["Ensure the src/ directory exists and contains your source files"],
+      ['Ensure the src/ directory exists and contains your source files'],
     );
   }
 
   try {
     // Special handling for pure CLI packages (bin only, no library exports)
-    if (prefix === "" && isPureCLIPackage(join(sourcePath, ".."))) {
-      const indexPath = join(sourcePath, "index.ts");
-      if (!existsSync(indexPath) && !existsSync(join(sourcePath, "index.js"))) {
-        throw new ConfigurationError("Pure CLI package missing index file", [
-          "Create src/index.ts, src/index.js, or src/index.cjs as the main entry point",
-          "Ensure the file exports the main CLI functionality",
+    if (prefix === '' && isPureCLIPackage(join(sourcePath, '..'))) {
+      const indexPath = join(sourcePath, 'index.ts');
+      if (!existsSync(indexPath) && !existsSync(join(sourcePath, 'index.js'))) {
+        throw new ConfigurationError('Pure CLI package missing index file', [
+          'Create src/index.ts, src/index.js, or src/index.cjs as the main entry point',
+          'Ensure the file exports the main CLI functionality',
         ]);
       }
 
       return {
-        index: existsSync(indexPath) ? indexPath : join(sourcePath, "index.js"),
+        index: existsSync(indexPath) ? indexPath : join(sourcePath, 'index.js'),
       };
     }
 
@@ -619,13 +619,13 @@ export function getPublicFiles(sourcePath, prefix = "") {
       .sort(); // Ensure consistent order across platforms
 
     // Only throw error if root directory is empty, subdirectories can be empty
-    if (files.length === 0 && prefix === "") {
+    if (files.length === 0 && prefix === '') {
       throw new ConfigurationError(
         `No valid source files found in: ${sourcePath}`,
         [
-          "Add TypeScript (.ts, .tsx, .cts, .mts) or JavaScript (.js, .jsx, .cjs, .mjs) files to src/",
-          "Ensure files are not test files (avoid .test.* or .spec.* naming)",
-          "Create at least an index file (src/index.ts, src/index.js, or src/index.cjs)",
+          'Add TypeScript (.ts, .tsx, .cts, .mts) or JavaScript (.js, .jsx, .cjs, .mjs) files to src/',
+          'Ensure files are not test files (avoid .test.* or .spec.* naming)',
+          'Create at least an index file (src/index.ts, src/index.js, or src/index.cjs)',
         ],
       );
     }
@@ -662,7 +662,7 @@ export function getPublicFiles(sourcePath, prefix = "") {
             result[dirKey] = normalizePath(indexFile);
 
             // Remove the explicit index file export (directory export replaces it)
-            const indexKey = normalizePath(join(prefix, filename, "index"));
+            const indexKey = normalizePath(join(prefix, filename, 'index'));
             delete result[indexKey];
           }
         }
@@ -696,19 +696,8 @@ export function getProxyFolders(rootPath) {
     const publicFiles = getPublicFiles(getSourcePath(rootPath));
     return Object.fromEntries(
       Object.keys(publicFiles)
-        .map((name) => {
-          // Remove /index from proxy name if present
-          const proxyName = name.replace(/\/index$/, "");
-          // Check if the source file path ends with /index.* (directory export)
-          // If so, the build path should include /index
-          const sourcePath = publicFiles[name];
-          const isDirectoryExport = /\/index\.[^/]+$/.test(sourcePath);
-          const buildPath = isDirectoryExport
-            ? `${proxyName}/index`
-            : proxyName;
-          return [proxyName, buildPath];
-        })
-        .filter(([name]) => name !== "index"),
+        .map((name) => [name.replace(/\/index$/, ''), name])
+        .filter(([name]) => name !== 'index'),
     );
   } catch (error) {
     console.warn(
@@ -758,18 +747,18 @@ export function getBuildFolders(rootPath, includeProxies = true) {
  * @returns {string} The actual file extension (.js, .ts, .mjs, .cjs)
  */
 function getIndexFileExtension(sourcePath, prod) {
-  if (prod) return ".ts"; // Not used in prod mode
+  if (prod) return '.ts'; // Not used in prod mode
 
   const config = getConfig();
   const possibleExtensions = config?.files?.extensions || [
-    ".js",
-    ".jsx",
-    ".ts",
-    ".tsx",
-    ".cjs",
-    ".mjs",
-    ".cts",
-    ".mts",
+    '.js',
+    '.jsx',
+    '.ts',
+    '.tsx',
+    '.cjs',
+    '.mjs',
+    '.cts',
+    '.mts',
   ];
 
   for (const ext of possibleExtensions) {
@@ -778,7 +767,7 @@ function getIndexFileExtension(sourcePath, prod) {
       return ext;
     }
   }
-  return ".js"; // Default fallback
+  return '.js'; // Default fallback
 }
 
 /**
@@ -788,8 +777,8 @@ function getIndexFileExtension(sourcePath, prod) {
  */
 function ensureRelativePath(path) {
   if (!path) return path;
-  if (path.startsWith("./")) return path;
-  if (path.startsWith("/")) return `.${path}`;
+  if (path.startsWith('./')) return path;
+  if (path.startsWith('/')) return `.${path}`;
   return `./${path}`;
 }
 
@@ -824,17 +813,17 @@ function convertPathToProduction(inputPath, builds) {
   }
 
   // Remove source prefix and ensure no leading ./
-  let relativePath = path.replace(new RegExp(`^\\.?/?${sourceDir}/`), "");
+  let relativePath = path.replace(new RegExp(`^\\.?/?${sourceDir}/`), '');
 
   // Convert to build path based on available builds
-  if ("cjs" in builds) {
+  if ('cjs' in builds) {
     // CJS: use cjs directory and .cjs extension
     const converted = `./${cjsDir}/${relativePath}`;
-    return converted.replace(/\.(m?[jt]s|[cm][jt]s)$/, ".cjs");
-  } else if ("esm" in builds) {
+    return converted.replace(/\.(m?[jt]s|[cm][jt]s)$/, '.cjs');
+  } else if ('esm' in builds) {
     // ESM: use esm directory and .js extension
     const converted = `./${esmDir}/${relativePath}`;
-    return converted.replace(/\.(m?ts|[cm]ts)$/, ".js");
+    return converted.replace(/\.(m?ts|[cm]ts)$/, '.js');
   }
 
   return path; // No builds configured
@@ -860,8 +849,8 @@ function convertPathToDevelopment(inputPath, rootPath = process.cwd()) {
   // Check if it's a CJS build path
   if (path.startsWith(`./${cjsDir}/`) || inputPath.startsWith(`${cjsDir}/`)) {
     const relativePath = path
-      .replace(new RegExp(`^\\.?/?${cjsDir}/`), "")
-      .replace(/\.cjs$/, "");
+      .replace(new RegExp(`^\\.?/?${cjsDir}/`), '')
+      .replace(/\.cjs$/, '');
 
     // Detect actual file extension in source
     const actualExt = getActualFileExtension(rootPath, relativePath, true);
@@ -871,8 +860,8 @@ function convertPathToDevelopment(inputPath, rootPath = process.cwd()) {
   // Check if it's an ESM build path
   if (path.startsWith(`./${esmDir}/`) || inputPath.startsWith(`${esmDir}/`)) {
     const relativePath = path
-      .replace(new RegExp(`^\\.?/?${esmDir}/`), "")
-      .replace(/\.js$/, "");
+      .replace(new RegExp(`^\\.?/?${esmDir}/`), '')
+      .replace(/\.js$/, '');
 
     // Detect actual file extension in source
     const actualExt = getActualFileExtension(rootPath, relativePath, true);
@@ -885,25 +874,27 @@ function convertPathToDevelopment(inputPath, rootPath = process.cwd()) {
 /**
  * Convert bin field between dev and production formats
  * @param {string | Record<string, string> | undefined} bin - The bin field from package.json
- * @param {boolean} prod - Whether to convert to production
+ * @param {string} mode - Mode: 'production' or 'development'
  * @param {object} builds - Build configuration
  * @param {string} rootPath - Root path for file extension detection
  * @returns {string | Record<string, string> | undefined} Converted bin field
  */
-function convertBinPaths(bin, prod, builds, rootPath) {
+function convertBinPaths(bin, mode, builds, rootPath) {
   if (!bin) return bin;
 
-  if (typeof bin === "string") {
-    return prod
+  const isProduction = mode === 'production';
+
+  if (typeof bin === 'string') {
+    return isProduction
       ? convertPathToProduction(bin, builds)
       : convertPathToDevelopment(bin, rootPath);
   }
 
-  if (typeof bin === "object") {
+  if (typeof bin === 'object') {
     const converted = /** @type {Record<string, string>} */ ({});
     for (const [name, binPath] of Object.entries(bin)) {
-      if (typeof binPath === "string") {
-        converted[name] = prod
+      if (typeof binPath === 'string') {
+        converted[name] = isProduction
           ? convertPathToProduction(binPath, builds)
           : convertPathToDevelopment(binPath, rootPath);
       }
@@ -917,10 +908,10 @@ function convertBinPaths(bin, prod, builds, rootPath) {
 /**
  * Generate package.json content for different environments
  * @param {string} rootPath - Root path of the package
- * @param {boolean} [prod=false] - Whether to generate for production
+ * @param {string} [mode='development'] - Mode: 'production' or 'development'
  * @returns {import('../schemas/commands-config.js').PackageJson} Generated package.json content
  */
-export function getPackageJson(rootPath, prod = false) {
+export function getPackageJson(rootPath, mode = 'development') {
   const pkg = readPackageJson(rootPath);
   const sourcePath = getSourcePath(rootPath);
   const publicFiles = getPublicFiles(sourcePath);
@@ -930,7 +921,8 @@ export function getPackageJson(rootPath, prod = false) {
   const esmDir = getESMDir();
   const builds = getPackageBuilds(rootPath);
   const buildKeys = Object.keys(builds);
-  const indexExtension = getIndexFileExtension(sourcePath, prod);
+  const isProduction = mode === 'production';
+  const indexExtension = getIndexFileExtension(sourcePath, isProduction);
 
   /**
    * Get export path for a given file
@@ -938,22 +930,22 @@ export function getPackageJson(rootPath, prod = false) {
    * @returns {string | { import: string; require: string }} Export configuration
    */
   const getExports = (path) => {
-    if (!prod) {
+    if (!isProduction) {
       return path.replace(sourcePath, `./${sourceDir}`);
     }
 
-    const relativePath = removeExt(path).replace(sourcePath, "");
+    const relativePath = removeExt(path).replace(sourcePath, '');
     const esmExport = `./${join(esmDir, relativePath)}.js`;
     const cjsExport = `./${join(cjsDir, relativePath)}.cjs`;
 
-    if ("esm" in builds && "cjs" in builds) {
+    if ('esm' in builds && 'cjs' in builds) {
       return {
         import: esmExport,
         require: cjsExport,
       };
     }
 
-    if (buildKeys[0] === "esm") return esmExport;
+    if (buildKeys[0] === 'esm') return esmExport;
     return cjsExport;
   };
 
@@ -961,7 +953,7 @@ export function getPackageJson(rootPath, prod = false) {
     (acc, [name, path]) => {
       // Convert name to export key format
       const exportKey =
-        name === "index" ? "." : `./${name.replace(/\/index$/, "")}`;
+        name === 'index' ? '.' : `./${name.replace(/\/index$/, '')}`;
 
       return { ...acc, [exportKey]: getExports(path) };
     },
@@ -971,46 +963,32 @@ export function getPackageJson(rootPath, prod = false) {
   // Always update main/module/types based on build configuration
   // These are separate from the exports map
   // Ensure all paths start with ./
-  if ("cjs" in builds) {
-    if (prod) {
-      const cjsExt = getActualFileExtension(
-        rootPath,
-        join(cjsDir, "index"),
-        false,
-      );
-      pkg.main = ensureRelativePath(join(cjsDir, `index${cjsExt}`));
-      pkg.types = ensureRelativePath(join(cjsDir, "index.d.ts"));
-    } else {
-      pkg.main = ensureRelativePath(join(sourceDir, `index${indexExtension}`));
-      pkg.types = ensureRelativePath(join(sourceDir, `index${indexExtension}`));
-    }
+  if ('cjs' in builds) {
+    pkg.main = isProduction
+      ? ensureRelativePath(join(cjsDir, 'index.cjs'))
+      : ensureRelativePath(join(sourceDir, `index${indexExtension}`));
+    pkg.types = isProduction
+      ? ensureRelativePath(join(cjsDir, 'index.d.ts'))
+      : ensureRelativePath(join(sourceDir, `index${indexExtension}`));
   }
 
-  if ("esm" in builds) {
-    if (prod) {
-      const esmExt = getActualFileExtension(
-        rootPath,
-        join(esmDir, "index"),
-        false,
-      );
-      pkg.module = ensureRelativePath(join(esmDir, `index${esmExt}`));
-      pkg.types = ensureRelativePath(join(esmDir, "index.d.ts"));
-    } else {
-      pkg.module = ensureRelativePath(
-        join(sourceDir, `index${indexExtension}`),
-      );
-      pkg.types = ensureRelativePath(join(sourceDir, `index${indexExtension}`));
-    }
+  if ('esm' in builds) {
+    pkg.module = isProduction
+      ? ensureRelativePath(join(esmDir, 'index.js'))
+      : ensureRelativePath(join(sourceDir, `index${indexExtension}`));
+    pkg.types = isProduction
+      ? ensureRelativePath(join(esmDir, 'index.d.ts'))
+      : ensureRelativePath(join(sourceDir, `index${indexExtension}`));
   }
 
   pkg.exports = {
     ...moduleExports,
-    "./package.json": "./package.json",
+    './package.json': './package.json',
   };
 
   // Convert bin paths to appropriate format (dev/prod)
   if (pkg.bin) {
-    pkg.bin = convertBinPaths(pkg.bin, prod, builds, rootPath);
+    pkg.bin = convertBinPaths(pkg.bin, mode, builds, rootPath);
   }
 
   return pkg;
@@ -1019,18 +997,24 @@ export function getPackageJson(rootPath, prod = false) {
 /**
  * Write package.json with error handling, preserving original structure
  * @param {string} rootPath - Root path of the package
- * @param {boolean} [prod=false] - Whether to generate for production
+ * @param {string} [mode='development'] - Mode: 'production' or 'development'
+ * @param {boolean} [checkMode=false] - Check mode: validate without writing, returns true if there are changes
+ * @returns {boolean} Returns false if no changes or checkMode is false, true if checkMode and there are changes
  */
-export function writePackageJson(rootPath, prod = false) {
+export function writePackageJson(
+  rootPath,
+  mode = 'development',
+  checkMode = false,
+) {
   try {
-    const pkgPath = join(rootPath, "package.json");
-    const currentContents = readFileSync(pkgPath, "utf-8");
+    const pkgPath = join(rootPath, 'package.json');
+    const currentContents = readFileSync(pkgPath, 'utf-8');
 
     // Read original package.json object (preserves property order)
     const pkg = JSON.parse(currentContents);
 
     // Check if original package.json had a types field BEFORE any modifications
-    const originalHadTypes = "types" in pkg;
+    const originalHadTypes = 'types' in pkg;
 
     // Calculate what the new values should be
     const sourcePath = getSourcePath(rootPath);
@@ -1041,7 +1025,8 @@ export function writePackageJson(rootPath, prod = false) {
     const esmDir = getESMDir();
     const builds = getPackageBuilds(rootPath);
 
-    const indexExtension = getIndexFileExtension(sourcePath, prod);
+    const isProduction = mode === 'production';
+    const indexExtension = getIndexFileExtension(sourcePath, isProduction);
     // const buildKeys = Object.keys(builds); // Currently unused
 
     /**
@@ -1050,15 +1035,15 @@ export function writePackageJson(rootPath, prod = false) {
      * @returns {Record<string, string>} Export configuration
      */
     const getExports = (path) => {
-      const relativePath = removeExt(path).replace(sourcePath, "");
+      const relativePath = removeExt(path).replace(sourcePath, '');
       const exportConfig = /** @type {Record<string, string>} */ ({});
 
       // Types field will be present only if it was originally present
       const willHaveTypesField = originalHadTypes;
 
-      if (!prod) {
+      if (!isProduction) {
         // Development mode: formats point to source file with original extension
-        const originalExtension = path.match(/\.[^.]+$/)?.[0] || ".js";
+        const originalExtension = path.match(/\.[^.]+$/)?.[0] || '.js';
         const sourceExport = `./${join(sourceDir, relativePath)}${originalExtension}`;
 
         // Add types export first (Node.js best practice)
@@ -1067,10 +1052,10 @@ export function writePackageJson(rootPath, prod = false) {
         }
 
         // Add exports based on what fields will be present in package.json
-        if ("esm" in builds) {
+        if ('esm' in builds) {
           exportConfig.import = sourceExport; // module field present
         }
-        if ("cjs" in builds) {
+        if ('cjs' in builds) {
           exportConfig.require = sourceExport; // main field present
         }
 
@@ -1084,19 +1069,19 @@ export function writePackageJson(rootPath, prod = false) {
       // Add types export first (Node.js best practice)
       if (willHaveTypesField) {
         // ESM types take precedence over CJS types (matches package.json logic)
-        if ("esm" in builds) {
+        if ('esm' in builds) {
           exportConfig.types = `./${join(esmDir, relativePath)}.d.ts`;
-        } else if ("cjs" in builds) {
+        } else if ('cjs' in builds) {
           exportConfig.types = `./${join(cjsDir, relativePath)}.d.ts`;
         }
       }
 
       // Add exports based on what builds are configured
-      if ("esm" in builds) {
+      if ('esm' in builds) {
         exportConfig.import = esmExport; // module field present
       }
 
-      if ("cjs" in builds) {
+      if ('cjs' in builds) {
         exportConfig.require = cjsExport; // main field present
       }
 
@@ -1108,7 +1093,7 @@ export function writePackageJson(rootPath, prod = false) {
       (acc, [name, path]) => {
         // Convert name to export key format
         const exportKey =
-          name === "index" ? "." : `./${name.replace(/\/index$/, "")}`;
+          name === 'index' ? '.' : `./${name.replace(/\/index$/, '')}`;
 
         return { ...acc, [exportKey]: getExports(path) };
       },
@@ -1118,48 +1103,56 @@ export function writePackageJson(rootPath, prod = false) {
     // Directly mutate the original object (preserves property order)
     // Always update main/module/types - these are independent of exports
     // Ensure all paths start with ./
-    if ("cjs" in builds) {
-      pkg.main = prod
-        ? ensureRelativePath(join(cjsDir, "index.cjs"))
+    if ('cjs' in builds) {
+      pkg.main = isProduction
+        ? ensureRelativePath(join(cjsDir, 'index.cjs'))
         : ensureRelativePath(join(sourceDir, `index${indexExtension}`));
       if (originalHadTypes) {
-        pkg.types = prod
-          ? ensureRelativePath(join(cjsDir, "index.d.ts"))
+        pkg.types = isProduction
+          ? ensureRelativePath(join(cjsDir, 'index.d.ts'))
           : ensureRelativePath(join(sourceDir, `index${indexExtension}`));
       }
     }
 
-    if ("esm" in builds) {
-      pkg.module = prod
-        ? ensureRelativePath(join(esmDir, "index.js"))
+    if ('esm' in builds) {
+      pkg.module = isProduction
+        ? ensureRelativePath(join(esmDir, 'index.js'))
         : ensureRelativePath(join(sourceDir, `index${indexExtension}`));
       if (originalHadTypes) {
-        pkg.types = prod
-          ? ensureRelativePath(join(esmDir, "index.d.ts"))
+        pkg.types = isProduction
+          ? ensureRelativePath(join(esmDir, 'index.d.ts'))
           : ensureRelativePath(join(sourceDir, `index${indexExtension}`));
       }
     }
 
     // Convert bin paths to appropriate format (dev/prod)
     if (pkg.bin) {
-      pkg.bin = convertBinPaths(pkg.bin, prod, builds, rootPath);
+      pkg.bin = convertBinPaths(pkg.bin, mode, builds, rootPath);
     }
 
     // Update exports (this is the key part - direct property mutation)
     pkg.exports = {
       ...moduleExports,
-      "./package.json": "./package.json",
+      './package.json': './package.json',
     };
 
     // Compare and write if changed
     const nextContents = `${JSON.stringify(pkg, null, 2)}\n`;
 
-    if (currentContents === nextContents) {
-      return; // No changes needed
+    const hasChanges = currentContents !== nextContents;
+
+    if (checkMode) {
+      // In check mode, return whether there are changes
+      return hasChanges;
+    }
+
+    if (!hasChanges) {
+      return false; // No changes needed
     }
 
     writeFileSync(pkgPath, nextContents);
     console.log(`${chalk.blue(pkg.name)} - Updated package.json`);
+    return false;
   } catch (error) {
     if (error instanceof ConfigurationError) {
       console.error(chalk.red(`Configuration error in ${rootPath}:`));
@@ -1212,17 +1205,14 @@ export function cleanBuild(rootPath) {
     });
 
     if (cleanedCount === 0) {
-      console.log(chalk.gray("   No build output directories found to clean"));
+      console.log(chalk.gray('   No build output directories found to clean'));
     } else {
       console.log(
         chalk.green(
-          `   Cleaned ${cleanedCount} build output ${cleanedCount === 1 ? "directory" : "directories"}`,
+          `   Cleaned ${cleanedCount} build output ${cleanedCount === 1 ? 'directory' : 'directories'}`,
         ),
       );
     }
-
-    // Remove build artifacts section from .gitignore (including proxies)
-    cleanGitignore(rootPath);
   } catch (error) {
     throw new PackageError(
       `Clean failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -1235,7 +1225,7 @@ export function cleanBuild(rootPath) {
  * @param {string} rootPath - Root path of the package
  */
 export function makeGitignore(rootPath) {
-  const gitignorePath = join(rootPath, ".gitignore");
+  const gitignorePath = join(rootPath, '.gitignore');
 
   try {
     // Get config to check writeToGitIgnore setting
@@ -1248,32 +1238,32 @@ export function makeGitignore(rootPath) {
     const allFolders = [...buildFolders];
     if (writeToGitIgnore) {
       const cacheFile =
-        config?.typescript?.buildCacheFile || ".cache/tsbuildinfo.json";
+        config?.typescript?.buildCacheFile || '.cache/tsbuildinfo.json';
       const cacheDir = dirname(cacheFile);
-      if (cacheDir && cacheDir !== "." && !allFolders.includes(cacheDir)) {
+      if (cacheDir && cacheDir !== '.' && !allFolders.includes(cacheDir)) {
         allFolders.push(cacheDir);
       }
     }
 
     if (allFolders.length === 0) {
-      console.log(chalk.gray("   No build folders to add to .gitignore"));
+      console.log(chalk.gray('   No build folders to add to .gitignore'));
       return;
     }
 
     // Generate the build artifacts section
     const buildArtifactsSection = [
-      "# Build artifacts (auto-generated by libsync)",
-      "# Do not edit this section manually - it will be overwritten",
+      '# Build artifacts (auto-generated by libsync)',
+      '# Do not edit this section manually - it will be overwritten',
       ...allFolders.sort().map((name) => `/${name}`),
-      "# End build artifacts",
-    ].join("\n");
+      '# End build artifacts',
+    ].join('\n');
 
-    let gitignoreContent = "";
+    let gitignoreContent = '';
     let hasExistingFile = false;
 
     if (existsSync(gitignorePath)) {
       hasExistingFile = true;
-      gitignoreContent = readFileSync(gitignorePath, "utf-8");
+      gitignoreContent = readFileSync(gitignorePath, 'utf-8');
     }
 
     // Update or create .gitignore with preserved user content
@@ -1287,13 +1277,13 @@ export function makeGitignore(rootPath) {
     if (hasExistingFile) {
       console.log(
         chalk.green(
-          `   Updated .gitignore with ${allFolders.length} build ${allFolders.length === 1 ? "directory" : "directories"}`,
+          `   Updated .gitignore with ${allFolders.length} build ${allFolders.length === 1 ? 'directory' : 'directories'}`,
         ),
       );
     } else {
       console.log(
         chalk.green(
-          `   Created .gitignore with ${allFolders.length} build ${allFolders.length === 1 ? "directory" : "directories"}`,
+          `   Created .gitignore with ${allFolders.length} build ${allFolders.length === 1 ? 'directory' : 'directories'}`,
         ),
       );
     }
@@ -1316,15 +1306,15 @@ function updateGitignoreWithBuildArtifacts(
   existingContent,
   buildArtifactsSection,
 ) {
-  const startMarker = "# Build artifacts (auto-generated by libsync)";
-  const endMarker = "# End build artifacts";
+  const startMarker = '# Build artifacts (auto-generated by libsync)';
+  const endMarker = '# End build artifacts';
 
   // If no existing content, just return the build artifacts section
   if (!existingContent.trim()) {
-    return buildArtifactsSection + "\n";
+    return buildArtifactsSection + '\n';
   }
 
-  const lines = existingContent.split("\n");
+  const lines = existingContent.split('\n');
   const startIndex = lines.findIndex((line) => line.trim() === startMarker);
   const endIndex = lines.findIndex((line) => line.trim() === endMarker);
 
@@ -1336,32 +1326,32 @@ function updateGitignoreWithBuildArtifacts(
     // Remove trailing empty lines from before section
     while (
       beforeSection.length > 0 &&
-      beforeSection[beforeSection.length - 1]?.trim() === ""
+      beforeSection[beforeSection.length - 1]?.trim() === ''
     ) {
       beforeSection.pop();
     }
 
     // Remove leading empty lines from after section
-    while (afterSection.length > 0 && afterSection[0]?.trim() === "") {
+    while (afterSection.length > 0 && afterSection[0]?.trim() === '') {
       afterSection.shift();
     }
 
     const result = [
       ...beforeSection,
-      ...(beforeSection.length > 0 ? [""] : []), // Add separator if there's content before
+      ...(beforeSection.length > 0 ? [''] : []), // Add separator if there's content before
       buildArtifactsSection,
-      ...(afterSection.length > 0 ? ["", ...afterSection] : []), // Add separator if there's content after
-    ].join("\n");
+      ...(afterSection.length > 0 ? ['', ...afterSection] : []), // Add separator if there's content after
+    ].join('\n');
 
-    return result.endsWith("\n") ? result : result + "\n";
+    return result.endsWith('\n') ? result : result + '\n';
   } else {
     // No existing build artifacts section, append to end
     const trimmedContent = existingContent.trimEnd();
     return (
       trimmedContent +
-      (trimmedContent ? "\n\n" : "") +
+      (trimmedContent ? '\n\n' : '') +
       buildArtifactsSection +
-      "\n"
+      '\n'
     );
   }
 }
@@ -1371,18 +1361,18 @@ function updateGitignoreWithBuildArtifacts(
  * @param {string} rootPath - Root path of the package
  */
 export function cleanGitignore(rootPath) {
-  const gitignorePath = join(rootPath, ".gitignore");
+  const gitignorePath = join(rootPath, '.gitignore');
 
   if (!existsSync(gitignorePath)) {
     return; // No .gitignore to clean
   }
 
   try {
-    const gitignoreContent = readFileSync(gitignorePath, "utf-8");
-    const startMarker = "# Build artifacts (auto-generated by libsync)";
-    const endMarker = "# End build artifacts";
+    const gitignoreContent = readFileSync(gitignorePath, 'utf-8');
+    const startMarker = '# Build artifacts (auto-generated by libsync)';
+    const endMarker = '# End build artifacts';
 
-    const lines = gitignoreContent.split("\n");
+    const lines = gitignoreContent.split('\n');
     const startIndex = lines.findIndex((line) => line.trim() === startMarker);
     const endIndex = lines.findIndex((line) => line.trim() === endMarker);
 
@@ -1394,29 +1384,29 @@ export function cleanGitignore(rootPath) {
       // Remove trailing empty lines from before section
       while (
         beforeSection.length > 0 &&
-        beforeSection[beforeSection.length - 1]?.trim() === ""
+        beforeSection[beforeSection.length - 1]?.trim() === ''
       ) {
         beforeSection.pop();
       }
 
       // Remove leading empty lines from after section
-      while (afterSection.length > 0 && afterSection[0]?.trim() === "") {
+      while (afterSection.length > 0 && afterSection[0]?.trim() === '') {
         afterSection.shift();
       }
 
       // Combine sections with proper spacing
       const result = [
         ...beforeSection,
-        ...(beforeSection.length > 0 && afterSection.length > 0 ? [""] : []),
+        ...(beforeSection.length > 0 && afterSection.length > 0 ? [''] : []),
         ...afterSection,
-      ].join("\n");
+      ].join('\n');
 
       writeFileSync(
         gitignorePath,
-        result.endsWith("\n") ? result : result + "\n",
+        result.endsWith('\n') ? result : result + '\n',
       );
 
-      console.log(chalk.green("   Cleaned .gitignore build artifacts section"));
+      console.log(chalk.green('   Cleaned .gitignore build artifacts section'));
     }
   } catch (error) {
     console.warn(
@@ -1436,16 +1426,16 @@ export function cleanGitignore(rootPath) {
  */
 function getActualFileExtension(rootPath, relativePath, isSource = true) {
   const config = getConfig();
-  const baseDir = isSource ? getSourceDir() : "";
+  const baseDir = isSource ? getSourceDir() : '';
   const extensions = config?.files?.extensions || [
-    ".js",
-    ".jsx",
-    ".ts",
-    ".tsx",
-    ".cjs",
-    ".mjs",
-    ".cts",
-    ".mts",
+    '.js',
+    '.jsx',
+    '.ts',
+    '.tsx',
+    '.cjs',
+    '.mjs',
+    '.cts',
+    '.mts',
   ];
 
   for (const ext of extensions) {
@@ -1456,7 +1446,7 @@ function getActualFileExtension(rootPath, relativePath, isSource = true) {
       return ext;
     }
   }
-  return ".js"; // fallback
+  return '.js'; // fallback
 }
 
 /**
@@ -1472,7 +1462,7 @@ export function cleanProxies(rootPath) {
     const rootDirs = new Set();
     Object.keys(proxyFolders).forEach((name) => {
       // Extract the first segment of the path (e.g., "commands" from "commands/build")
-      const rootDir = name.split("/")[0];
+      const rootDir = name.split('/')[0];
       rootDirs.add(rootDir);
     });
 
@@ -1497,7 +1487,7 @@ export function cleanProxies(rootPath) {
     if (cleanedCount > 0) {
       console.log(
         chalk.gray(
-          `   Cleaned ${cleanedCount} root proxy ${cleanedCount === 1 ? "directory" : "directories"}`,
+          `   Cleaned ${cleanedCount} root proxy ${cleanedCount === 1 ? 'directory' : 'directories'}`,
         ),
       );
     }
@@ -1525,7 +1515,7 @@ export function makeProxies(rootPath, prod = true) {
     const created = [];
 
     if (Object.keys(proxyFolders).length === 0) {
-      console.log(chalk.gray("   No proxies to generate"));
+      console.log(chalk.gray('   No proxies to generate'));
       return;
     }
 
@@ -1540,7 +1530,7 @@ export function makeProxies(rootPath, prod = true) {
           path,
           prod,
         );
-        writeFileSync(join(proxyDir, "package.json"), proxyPackageJson);
+        writeFileSync(join(proxyDir, 'package.json'), proxyPackageJson);
 
         created.push(chalk.green(name));
       } catch (error) {
@@ -1555,11 +1545,11 @@ export function makeProxies(rootPath, prod = true) {
       }
     });
 
-    const mode = prod ? "production" : "development";
+    const mode = prod ? 'production' : 'development';
     if (created.length > 0) {
       console.log(
         chalk.green(
-          `   Created ${created.length} ${mode} proxy ${created.length === 1 ? "package" : "packages"}: ${created.join(", ")}`,
+          `   Created ${created.length} ${mode} proxy ${created.length === 1 ? 'package' : 'packages'}: ${created.join(', ')}`,
         ),
       );
     }
@@ -1589,7 +1579,7 @@ function generateProxyPackageJson(rootPath, moduleName, path, prod = true) {
   const sourceDir = getSourceDir();
   const mainDir = getCJSDir();
   const moduleDir = getESMDir();
-  const prefix = "../".repeat(moduleName.split("/").length);
+  const prefix = '../'.repeat(moduleName.split('/').length);
 
   /** @type {Record<string, any>} */
   const proxyPkg = {
@@ -1600,7 +1590,7 @@ function generateProxyPackageJson(rootPath, moduleName, path, prod = true) {
 
   if (prod) {
     // Production mode - point to built files with detected extensions
-    if ("esm" in builds) {
+    if ('esm' in builds) {
       const esmExt = getActualFileExtension(
         rootPath,
         join(moduleDir, path),
@@ -1610,7 +1600,7 @@ function generateProxyPackageJson(rootPath, moduleName, path, prod = true) {
       proxyPkg.types = join(prefix, moduleDir, `${path}.d.ts`);
     }
 
-    if ("cjs" in builds) {
+    if ('cjs' in builds) {
       const cjsExt = getActualFileExtension(
         rootPath,
         join(mainDir, path),

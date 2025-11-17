@@ -14,13 +14,12 @@
     "directory": "configs/eslint-config"
   },
   "type": "module",
-  "main": "./cjs/index.cjs",
-  "module": "./esm/index.js",
+  "main": "./src/index.js",
+  "module": "./src/index.js",
   "scripts": {
     "build": "libsync build",
     "clean": "libsync clean",
-    "dev": "pnpm dev:package-json --watch",
-    "dev:package-json": "libsync dev --",
+    "dev": "pnpm libsync package-json --watch --mode development",
     "format": "prettier --check \"src/**/*.{js,cjs,json,md}\"",
     "format:fix": "prettier --write \"src/**/*.{js,cjs,json,md}\"",
     "lint": "eslint \"src/**/*.{js,cjs}\"",
@@ -65,20 +64,20 @@
   },
   "exports": {
     "./base": {
-      "import": "./esm/base.js",
-      "require": "./cjs/base.cjs"
+      "import": "./src/base.js",
+      "require": "./src/base.js"
     },
     "./node": {
-      "import": "./esm/node.js",
-      "require": "./cjs/node.cjs"
+      "import": "./src/node.js",
+      "require": "./src/node.js"
     },
     "./react": {
-      "import": "./esm/react.js",
-      "require": "./cjs/react.cjs"
+      "import": "./src/react.js",
+      "require": "./src/react.js"
     },
     "./typescript": {
-      "import": "./esm/typescript.js",
-      "require": "./cjs/typescript.cjs"
+      "import": "./src/typescript.js",
+      "require": "./src/typescript.js"
     },
     "./package.json": "./package.json"
   }
