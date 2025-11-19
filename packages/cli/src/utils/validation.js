@@ -5,14 +5,17 @@
 
 import { existsSync, statSync } from 'fs';
 import { join, resolve } from 'path';
+
 import chalk from 'chalk';
 import { glob } from 'glob';
+
 import {
   packageJsonSchema,
   tsConfigSchema,
 } from '../schemas/commands-config.js';
-import { readPackageJson } from './package.js';
+
 import { getConfig } from './config.js';
+import { readPackageJson } from './package.js';
 
 /**
  * Display a welcome message with tool information

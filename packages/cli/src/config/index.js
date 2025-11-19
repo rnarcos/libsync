@@ -42,6 +42,7 @@ export const libsyncConfigSchema = z
             '.mjs',
             '.cts',
             '.mts',
+            '.json',
           ]),
         // Paths to completely ignore during build (won't be compiled by tsc/tsup, no proxies, no exports)
         ignoreBuildPaths: z
@@ -61,16 +62,15 @@ export const libsyncConfigSchema = z
         build: z
           .object({
             // Tsup configuration can be:
-            // 1. A single object applied to all formats: { splitting: true }
-            // 2. Format-specific with default fallback: { default: {...}, esm: {...}, cjs: {...} }
+            // 1. An object applied to all formats: { splitting: true }
+            // 2. A function that receives {type: 'esm'|'cjs'} and returns config
             tsup: z
               .union([
                 tsupConfigSchema,
-                z.object({
-                  default: tsupConfigSchema.optional(),
-                  esm: tsupConfigSchema.optional(),
-                  cjs: tsupConfigSchema.optional(),
-                }),
+                z.function(
+                  z.tuple([z.object({ type: z.enum(['esm', 'cjs']) })]),
+                  tsupConfigSchema,
+                ),
               ])
               .optional(),
           })
@@ -81,5 +81,5 @@ export const libsyncConfigSchema = z
   .default({});
 
 /**
- * @typedef {import('zod').infer<typeof libsyncConfigSchema>} LibsyncConfig
+ * @typedef {import('type-fest').PartialDeep<import('zod').infer<typeof libsyncConfigSchema>>} LibsyncConfig
  */

@@ -195,8 +195,9 @@ export function promptSelect(question, options, defaultIndex = 0) {
  * @returns {Promise<string>} User input
  */
 export async function promptText(question, defaultValue = '') {
-  return new Promise(async (resolve) => {
-    const { createInterface } = await import('readline');
+  const { createInterface } = await import('readline');
+
+  return new Promise((resolve) => {
     const readline = createInterface({
       input: process.stdin,
       output: process.stdout,

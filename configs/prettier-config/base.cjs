@@ -1,8 +1,5 @@
-/* eslint-env commonjs, node */
-
 /** @type {import('prettier').Config} */
-export default {
-  // Minimal base configuration for libraries
+module.exports = {
   trailingComma: 'all',
   useTabs: false,
   tabWidth: 2,

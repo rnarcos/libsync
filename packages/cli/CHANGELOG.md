@@ -4,9 +4,12 @@
 
 ### Patch Changes
 
-- [`af7fa83`](https://github.com/rnarcos/libsync/commit/af7fa83081e8a57b9fcd969e5c8d4b49f30676fc) Thanks [@rnarcos](https://github.com/rnarcos)! - # Introduce unified configuration system with libsync.config.mjs
+- [`af7fa83`](https://github.com/rnarcos/libsync/commit/af7fa83081e8a57b9fcd969e5c8d4b49f30676fc)
+  Thanks [@rnarcos](https://github.com/rnarcos)! - # Introduce unified configuration system with
+  libsync.config.mjs
 
-  This release introduces a powerful new configuration system that consolidates all libsync settings into a single `libsync.config.mjs` file, replacing the previous `tsup.config.mjs` approach.
+  This release introduces a powerful new configuration system that consolidates all libsync settings
+  into a single `libsync.config.mjs` file, replacing the previous `tsup.config.mjs` approach.
 
   ## ✨ New Features
 
@@ -29,49 +32,43 @@
   - Pattern matching with automatic `src/` prefix stripping for intuitive usage
 
   ### Enhanced Package.json Management
-  - **Smart path conversion**: Automatically convert `bin`, `main`, `module`, and `types` fields between dev/prod modes
-  - **Actual file detection**: No more guessing `.js` vs `.ts` - dynamically detects real file extensions
+  - **Smart path conversion**: Automatically convert `bin`, `main`, `module`, and `types` fields
+    between dev/prod modes
+  - **Actual file detection**: No more guessing `.js` vs `.ts` - dynamically detects real file
+    extensions
   - **Relative paths**: All paths normalized to start with `./`
   - **Bin field support**: Handles both string and object syntax
 
   ### Development Workflow Improvements
   - **Dev mode proxies**: `libsync dev` now generates proxies pointing to `src/` files
   - **Watch mode enhancement**: Automatically regenerates proxies when files are added/removed
-  - **Smart proxy cleanup**: Removes entire root directories (commands/, utils/, schemas/) for clean state
+  - **Smart proxy cleanup**: Removes entire root directories (commands/, utils/, schemas/) for clean
+    state
   - **Better error logging**: Clear, actionable error messages with stack traces
 
   ## 🔧 Configuration Options
 
   ```javascript
-  /** @type {import('libsync/config').LibsyncConfig} */
+  /** @type {import('libsync').LibsyncConfig} */
   export default {
     // Directory names
     directories: {
-      source: "src", // Source directory
-      cjs: "cjs", // CommonJS output
-      esm: "esm", // ES Modules output
+      source: 'src', // Source directory
+      cjs: 'cjs', // CommonJS output
+      esm: 'esm', // ES Modules output
     },
 
     // TypeScript settings
     typescript: {
-      configFile: "tsconfig.json",
-      buildConfigFile: "tsconfig.build.json",
-      buildCacheFile: ".cache/tsbuildinfo.json",
+      configFile: 'tsconfig.json',
+      buildConfigFile: 'tsconfig.build.json',
+      buildCacheFile: '.cache/tsbuildinfo.json',
     },
 
     // File handling
     files: {
-      extensions: [
-        ".js",
-        ".jsx",
-        ".ts",
-        ".tsx",
-        ".cjs",
-        ".mjs",
-        ".cts",
-        ".mts",
-      ],
-      ignoreBuildPaths: ["**/*.test.*", "**/*.spec.*", "**/__tests__/**"],
+      extensions: ['.js', '.jsx', '.ts', '.tsx', '.cjs', '.mjs', '.cts', '.mts'],
+      ignoreBuildPaths: ['**/*.test.*', '**/*.spec.*', '**/__tests__/**'],
       ignoreExportPaths: [], // e.g., ['commands/*'] for CLI-only files
     },
 
@@ -140,6 +137,10 @@
   - Added TypeScript configuration examples
   - Updated publish-staging documentation with build prerequisites
 
-- [`3292aa6`](https://github.com/rnarcos/libsync/commit/3292aa61c851bababea5e70ca48877bf38b7d265) Thanks [@rnarcos](https://github.com/rnarcos)! - Fixing bug where package.json "exports" were not being processed recursively - only at first level.
+- [`3292aa6`](https://github.com/rnarcos/libsync/commit/3292aa61c851bababea5e70ca48877bf38b7d265)
+  Thanks [@rnarcos](https://github.com/rnarcos)! - Fixing bug where package.json "exports" were not
+  being processed recursively - only at first level.
 
-- [`5648bef`](https://github.com/rnarcos/libsync/commit/5648bef064afb4475cb202e21b5f6436739bd6dd) Thanks [@rnarcos](https://github.com/rnarcos)! - Fixing `publish-staging` command to better handle verdaccio server management.
+- [`5648bef`](https://github.com/rnarcos/libsync/commit/5648bef064afb4475cb202e21b5f6436739bd6dd)
+  Thanks [@rnarcos](https://github.com/rnarcos)! - Fixing `publish-staging` command to better handle
+  verdaccio server management.

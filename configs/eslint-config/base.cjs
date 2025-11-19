@@ -1,7 +1,7 @@
 /* eslint-env commonjs, node */
 
 /** @type {import('eslint').Linter.Config} */
-export default {
+module.exports = {
   extends: ['eslint:recommended', 'prettier'],
   plugins: ['import'],
   env: {
@@ -31,7 +31,7 @@ export default {
       'error',
       'ignorePackages',
       {
-        js: 'never',
+        js: 'always',
         jsx: 'never',
         ts: 'never',
         tsx: 'never',

@@ -6,9 +6,12 @@
 import { existsSync } from 'fs';
 import { join, resolve } from 'path';
 import { pathToFileURL } from 'url';
-import { libsyncConfigSchema } from '../config/index.js';
-import { ConfigurationError } from './package.js';
+
 import { ZodError } from 'zod';
+
+import { libsyncConfigSchema } from '../config/index.js';
+
+import { ConfigurationError } from './package.js';
 
 let _config = /** @type {import('../config/index.js').LibsyncConfig | null} */ (
   null
@@ -35,8 +38,21 @@ export async function loadLibsyncConfig(packagePath) {
     const configModule = await dynamicImport(configUrl);
     const userConfig = configModule.default || configModule;
 
-    // Validate and merge with defaults (Zod handles deep merge)
+    // Get default config first
+    const defaultConfig = libsyncConfigSchema.parse({});
+
+    // Validate user config
     const config = libsyncConfigSchema.parse(userConfig);
+
+    // Merge extensions: combine user extensions with defaults (deduplicate)
+    if (userConfig?.files?.extensions) {
+      const defaultExtensions = defaultConfig.files?.extensions || [];
+      const userExtensions = config.files?.extensions || [];
+      // Merge and deduplicate
+      config.files.extensions = [
+        ...new Set([...defaultExtensions, ...userExtensions]),
+      ];
+    }
 
     return config;
   } catch (error) {

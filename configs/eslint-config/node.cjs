@@ -1,7 +1,7 @@
 /* eslint-env commonjs, node */
 
 /** @type {import('eslint').Linter.Config} */
-export default {
+module.exports = {
   extends: ['./base.cjs'],
   env: {
     node: true,

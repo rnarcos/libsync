@@ -13,39 +13,26 @@
     "url": "https://github.com/rnarcos/libsync.git",
     "directory": "configs/prettier-config"
   },
-  "type": "module",
-  "main": "./src/index.js",
-  "module": "./src/index.js",
+  "type": "commonjs",
+  "main": "./index.cjs",
   "scripts": {
-    "build": "libsync build",
-    "clean": "libsync clean",
-    "dev": "pnpm libsync package-json --watch --mode development",
-    "format": "prettier --check \"src/**/*.{js,cjs,json,md}\"",
-    "format:fix": "prettier --write \"src/**/*.{js,cjs,json,md}\"",
-    "lint": "eslint \"src/**/*.{js,cjs}\"",
-    "lint:fix": "eslint \"src/**/*.{js,cjs}\" --fix"
+    "format": "prettier --check \"./*.cjs\" --ignore-path ../../.prettierignore",
+    "format:fix": "prettier --write \"./*.cjs\" --ignore-path ../../.prettierignore",
+    "lint": "eslint \"./*.cjs\"",
+    "lint:fix": "eslint \"./*.cjs\" --fix"
   },
   "peerDependencies": {
     "prettier": "^3.0.0"
   },
   "devDependencies": {
     "@types/prettier": "^3.0.0",
-    "eslint": "^9.35.0",
+    "eslint": "^8.57.0",
     "prettier": "^3.2.5"
   },
   "exports": {
-    "./base": {
-      "import": "./src/base.js",
-      "require": "./src/base.js"
-    },
-    ".": {
-      "import": "./src/index.js",
-      "require": "./src/index.js"
-    },
-    "./web": {
-      "import": "./src/web.js",
-      "require": "./src/web.js"
-    },
+    "./base": "./base.cjs",
+    ".": "./index.cjs",
+    "./web": "./web.cjs",
     "./package.json": "./package.json"
   }
 }

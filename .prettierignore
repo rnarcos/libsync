@@ -1,14 +1,11 @@
 # Dependencies
-node_modules
+**/node_modules/**
 
 # Build outputs
 **/cjs/**
 **/esm/**
-**/dist/**
 
 # Cache directories
 **/.cache/**
 **/.turbo/**
 
-# Verdaccio storage
-**/storage/**

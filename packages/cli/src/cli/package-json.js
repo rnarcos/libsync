@@ -3,10 +3,13 @@
  * Package.json generation with monorepo and single-repo support for production and development modes
  */
 
-import { basename } from 'path';
 import { existsSync } from 'fs';
+import { basename } from 'path';
+
 import chalk from 'chalk';
 import { watch } from 'chokidar';
+
+import { initConfig } from '../utils/config.js';
 import {
   shouldProcessInDev,
   readPackageJson,
@@ -17,7 +20,6 @@ import {
   ConfigurationError,
   groupPathsByPackage,
 } from '../utils/package.js';
-import { initConfig } from '../utils/config.js';
 
 /**
  * Package.json options type definition
@@ -178,7 +180,7 @@ export async function packageJsonCommand(options) {
  * @param {string} mode - Mode: 'production' or 'development'
  * @param {boolean} verbose - Enable verbose logging
  * @param {boolean} check - Check mode: validate without writing
- * @param {boolean} write - Write mode: update package.json files
+ * @param {boolean} _write - Write mode: update package.json files
  * @returns {Promise<void>} Processing promise
  */
 async function processCurrentPackage(
@@ -186,7 +188,7 @@ async function processCurrentPackage(
   mode,
   verbose,
   check = false,
-  write = true,
+  _write = true,
 ) {
   try {
     // Initialize config before processing package
@@ -322,7 +324,7 @@ async function startWatchModeForMultiplePackages(packagePaths, mode, verbose) {
   console.log(chalk.blue('\n👀 Starting watch mode for multiple packages...'));
   console.log(chalk.yellow('Press Ctrl+C to stop watching\n'));
 
-  const watchers = packagePaths.map((packagePath) => {
+  const _watchers = packagePaths.map((packagePath) => {
     const packageInfo = analyzePackage(packagePath);
     const packageName = packageInfo.name || basename(packagePath);
 

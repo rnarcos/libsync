@@ -4,12 +4,13 @@
  */
 
 import chalk from 'chalk';
+
+import { initConfig } from '../utils/config.js';
 import {
   cleanBuild,
   PackageError,
   ConfigurationError,
 } from '../utils/package.js';
-import { initConfig } from '../utils/config.js';
 
 /**
  * Clean options type definition

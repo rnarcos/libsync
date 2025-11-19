@@ -3,9 +3,10 @@
  * Provides type-safe validation for CLI inputs with JSDoc type annotations
  */
 
-import { z } from 'zod';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
+
+import { z } from 'zod';
 
 // Custom path validator
 const validPath = z.string().refine(
