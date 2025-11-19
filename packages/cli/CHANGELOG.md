@@ -1,5 +1,82 @@
 # libsync
 
+## 0.0.7
+
+### Patch Changes
+
+- [`e91bd1e`](https://github.com/rnarcos/libsync/commit/e91bd1ec64d621c6a0931b36a931118de879c898) Thanks [@rnarcos](https://github.com/rnarcos)! - Fixed package.json main, module, types, and bin fields to use actual file extensions instead of
+  hardcoded .js extensions. The logic now properly detects the real file extensions (.cjs, .js, etc.)
+  using getActualFileExtension for both the main package.json and proxy package.json files. This
+  ensures correct path resolution in production and development modes.
+
+- [`51e1397`](https://github.com/rnarcos/libsync/commit/51e1397c584a261f2c491905364096e42e935f26) Thanks [@rnarcos](https://github.com/rnarcos)! - Fixed package.json generation to correctly handle build output file extensions:
+  - **Dynamic extension detection**: Package.json exports and proxy files now detect actual file
+    extensions from build output (`.js`, `.cjs`, `.mjs`, etc.) instead of assuming hardcoded
+    extensions. This ensures correct module resolution when tsup outputs different extensions.
+  - **Conditional TypeScript declarations**: Only include `types` fields in package.json when `.d.ts`
+    files actually exist in the build output, preventing module resolution errors for packages without
+    TypeScript declarations.
+  - **Support for `.json` files**: Added `.json` to supported file extensions in both config schema
+    and file detection logic, enabling proper handling of JSON modules in exports.
+
+  These fixes ensure package.json files accurately reflect the actual build artifacts, improving
+  module resolution reliability across different bundler configurations.
+
+- [`793fdc0`](https://github.com/rnarcos/libsync/commit/793fdc03aa14915c16b432ee1aa5a4ff41c6781a) Thanks [@rnarcos](https://github.com/rnarcos)! - **BREAKING CHANGE: Rename `dev` command to `package-json` with new mode system**
+  - The `dev` command has been **renamed** to `package-json`
+  - All scripts using `libsync dev` must be updated to `libsync package-json`
+  - Replaced boolean `prod` parameter with `--mode <production|development>` flag
+  - Default mode is `development`
+  - Mode parameter is now a string enum: `'production' | 'development'`
+
+  Update all package.json scripts across your workspace:
+
+  ```diff
+  {
+    "scripts": {
+  -   "dev:package-json": "libsync dev --"
+  +   "dev:package-json": "libsync package-json --"
+    }
+  }
+  ```
+
+  - Added `--check` flag to validate package.json without writing changes
+  - Useful in CI/CD pipelines to ensure package.json is in the correct state
+  - Exits with code 1 if package.json doesn't match expected configuration
+
+  ```bash
+  libsync package-json --check
+
+  libsync package-json --mode production --check
+  ```
+
+  - Added `--write` flag (default: true) for explicit control
+  - When `--check` is used, `--write` is automatically set to false
+  - Mutually exclusive with `--check`
+
+  ```bash
+  libsync package-json
+
+  libsync package-json --mode production
+
+  libsync package-json --check
+
+  libsync package-json --watch
+
+  libsync package-json --mode production --watch
+  ```
+
+  - Fixed clean command incorrectly modifying `.gitignore` files
+  - The clean command now only removes build artifacts without touching `.gitignore`
+  - `.gitignore` is only modified when running package-json/build commands with
+    `writeToGitIgnore: false` config
+  1. **Update all scripts** that use `libsync dev` to `libsync package-json`
+  2. **Review CI/CD pipelines** - consider adding `--check` flag for validation
+  3. **Update documentation** referencing the old `dev` command
+  4. **Test your workflows** to ensure the new command works as expected
+
+  No changes are needed to your `libsync.config.mjs` configuration files.
+
 ## 0.0.4
 
 ### Patch Changes
@@ -67,7 +144,16 @@
 
     // File handling
     files: {
-      extensions: ['.js', '.jsx', '.ts', '.tsx', '.cjs', '.mjs', '.cts', '.mts'],
+      extensions: [
+        '.js',
+        '.jsx',
+        '.ts',
+        '.tsx',
+        '.cjs',
+        '.mjs',
+        '.cts',
+        '.mts',
+      ],
       ignoreBuildPaths: ['**/*.test.*', '**/*.spec.*', '**/__tests__/**'],
       ignoreExportPaths: [], // e.g., ['commands/*'] for CLI-only files
     },
