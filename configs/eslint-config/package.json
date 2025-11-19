@@ -13,22 +13,18 @@
     "url": "https://github.com/rnarcos/libsync.git",
     "directory": "configs/eslint-config"
   },
-  "type": "module",
-  "main": "./src/index.js",
-  "module": "./src/index.js",
+  "type": "commonjs",
+  "main": "./index.cjs",
   "scripts": {
-    "build": "libsync build",
-    "clean": "libsync clean",
-    "dev": "pnpm libsync package-json --watch --mode development",
-    "format": "prettier --check \"src/**/*.{js,cjs,json,md}\"",
-    "format:fix": "prettier --write \"src/**/*.{js,cjs,json,md}\"",
-    "lint": "eslint \"src/**/*.{js,cjs}\"",
-    "lint:fix": "eslint \"src/**/*.{js,cjs}\" --fix"
+    "format": "prettier --check \"./*.cjs\" --ignore-path ../../.prettierignore",
+    "format:fix": "prettier --write \"./*.cjs\" --ignore-path ../../.prettierignore",
+    "lint": "eslint \"./*.cjs\"",
+    "lint:fix": "eslint \"./*.cjs\" --fix"
   },
   "peerDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
-    "eslint": "^8.0.0 || ^9.0.0",
+    "eslint": "^8.0.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-import": "^2.25.0",
     "eslint-plugin-jsx-a11y": "^6.0.0",
@@ -55,7 +51,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.44.0",
     "@typescript-eslint/parser": "^8.44.0",
-    "eslint": "^9.35.0",
+    "eslint": "^8.57.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-jsx-a11y": "^6.9.0",
@@ -63,22 +59,11 @@
     "eslint-plugin-react-hooks": "^5.1.0"
   },
   "exports": {
-    "./base": {
-      "import": "./src/base.js",
-      "require": "./src/base.js"
-    },
-    "./node": {
-      "import": "./src/node.js",
-      "require": "./src/node.js"
-    },
-    "./react": {
-      "import": "./src/react.js",
-      "require": "./src/react.js"
-    },
-    "./typescript": {
-      "import": "./src/typescript.js",
-      "require": "./src/typescript.js"
-    },
+    "./base": "./base.cjs",
+    ".": "./index.cjs",
+    "./node": "./node.cjs",
+    "./react": "./react.cjs",
+    "./typescript": "./typescript.cjs",
     "./package.json": "./package.json"
   }
 }

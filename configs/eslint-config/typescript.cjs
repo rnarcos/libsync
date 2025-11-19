@@ -1,11 +1,11 @@
-/* eslint-env commonjs, node */
+/* eslint-env node */
 
 /** @type {import('eslint').Linter.Config} */
-export default {
+module.exports = {
   extends: [
     './base.cjs',
-    '@typescript-eslint/recommended',
-    '@typescript-eslint/recommended-requiring-type-checking',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'prettier',
   ],
   parser: '@typescript-eslint/parser',
@@ -75,14 +75,4 @@ export default {
       },
     ],
   },
-  overrides: [
-    {
-      // Less strict rules for JavaScript files in TypeScript projects
-      files: ['*.js', '*.cjs', '*.mjs'],
-      rules: {
-        '@typescript-eslint/no-var-requires': 'off',
-        '@typescript-eslint/explicit-function-return-type': 'off',
-      },
-    },
-  ],
 };

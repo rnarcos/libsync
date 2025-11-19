@@ -1,0 +1,5 @@
+{
+  "extends": "./src/js.json",
+  "include": ["src/**/*.js", "src/**/*.cjs"],
+  "exclude": ["node_modules"]
+}

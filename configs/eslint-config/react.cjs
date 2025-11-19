@@ -1,7 +1,7 @@
 /* eslint-env commonjs, node */
 
 /** @type {import('eslint').Linter.Config} */
-export default {
+module.exports = {
   extends: [
     './base.cjs',
     'plugin:react/recommended',
@@ -54,19 +54,4 @@ export default {
       },
     ],
   },
-  overrides: [
-    {
-      // TypeScript + React rules
-      files: ['*.tsx'],
-      extends: ['./typescript.cjs'],
-      rules: {
-        'react/jsx-filename-extension': [
-          'error',
-          {
-            extensions: ['.tsx'],
-          },
-        ],
-      },
-    },
-  ],
 };

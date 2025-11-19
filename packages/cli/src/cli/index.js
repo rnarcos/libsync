@@ -5,17 +5,19 @@
  * TypeScript-style CLI built with JavaScript and JSDoc type annotations
  */
 
-import { program } from 'commander';
 import chalk from 'chalk';
-import { buildCommand } from './build.js';
-import { cleanCommand } from './clean.js';
-import { packageJsonCommand } from './package-json.js';
-import { publishStaging } from './publish-staging.js';
+import { program } from 'commander';
+
 import { commandsConfigSchema } from '../schemas/index.js';
 import {
   checkProjectStructure,
   displayWelcomeMessage,
 } from '../utils/validation.js';
+
+import { buildCommand } from './build.js';
+import { cleanCommand } from './clean.js';
+import { packageJsonCommand } from './package-json.js';
+import { publishStaging } from './publish-staging.js';
 
 // Display welcome message
 displayWelcomeMessage();

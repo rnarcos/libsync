@@ -1,8 +1,5 @@
-/* eslint-env commonjs, node */
-
 /** @type {import('prettier').Config} */
-export default {
-  // Base formatting rules
+module.exports = {
   trailingComma: 'all',
   useTabs: false,
   tabWidth: 2,
@@ -13,13 +10,25 @@ export default {
   bracketSameLine: false,
   arrowParens: 'always',
   endOfLine: 'lf',
-
-  // Print width and wrapping
   printWidth: 80,
-  proseWrap: 'preserve',
 
-  // Language-specific overrides
+  jsxSingleQuote: false,
+
+  htmlWhitespaceSensitivity: 'css',
+
   overrides: [
+    {
+      files: '*.{css,scss,less}',
+      options: {
+        singleQuote: false,
+      },
+    },
+    {
+      files: '*.html',
+      options: {
+        printWidth: 120,
+      },
+    },
     {
       files: '*.md',
       options: {
@@ -31,12 +40,6 @@ export default {
       files: '*.json',
       options: {
         printWidth: 120,
-      },
-    },
-    {
-      files: '*.{yml,yaml}',
-      options: {
-        singleQuote: false,
       },
     },
   ],

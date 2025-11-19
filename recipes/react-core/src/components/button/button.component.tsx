@@ -1,6 +1,8 @@
-import { forwardRef } from 'react';
 import { Slot } from 'radix-ui';
+import { forwardRef } from 'react';
+
 import { cn } from '../../utils/ui/index.js';
+
 import { buttonVariants } from './button.data.js';
 import type { ButtonProps } from './button.props.js';
 

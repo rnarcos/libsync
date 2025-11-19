@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "incremental": false
+    "composite": true
   },
   "include": ["src"],
   "exclude": ["src/**/*.test.*", "src/**/__tests__/**/*"]

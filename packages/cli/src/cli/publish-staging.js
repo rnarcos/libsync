@@ -15,25 +15,27 @@
  */
 
 import { setDefaultResultOrder } from 'dns';
-import { spawn } from 'cross-spawn';
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
 import { mkdtempSync, rmSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+
 import chalk from 'chalk';
+import { spawn } from 'cross-spawn';
 import { runServer } from 'verdaccio';
-import {
-  PackageError,
-  ConfigurationError,
-  getPackageBuilds,
-} from '../utils/package.js';
+
 import { packageJsonSchema } from '../schemas/commands-config.js';
+import { initConfig } from '../utils/config.js';
 import {
   checkPortAvailable,
   promptUser,
   findAvailablePort,
 } from '../utils/input.js';
-import { initConfig } from '../utils/config.js';
+import {
+  PackageError,
+  ConfigurationError,
+  getPackageBuilds,
+} from '../utils/package.js';
 
 // Configure Node.js to prefer IPv4 for localhost connections
 setDefaultResultOrder('ipv4first');

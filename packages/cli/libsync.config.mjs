@@ -1,4 +1,4 @@
-/** @type {import('libsync/config').LibsyncConfig} */
+/** @type {import('libsync').LibsyncConfig} */
 export default {
   files: {
     ignoreExportPaths: ['cli/*'],

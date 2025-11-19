@@ -10,7 +10,6 @@ The `libsync` provides a complete toolkit for library development, including bui
 
 - **[build](./build.md)** - Build library packages using tsup with intelligent configuration
 - **[clean](./clean.md)** - Clean build artifacts and generated files
-- **[dev](./dev.md)** - Development workflow with automatic package.json management
 - **[publish:staging](./publish-staging.md)** - Staging deployment with Verdaccio integration
 
 ## Key Features
@@ -58,9 +57,6 @@ yarn global add libsync
 ```bash
 # Build your library
 libsync build
-
-# Start development mode with file watching
-libsync dev --watch
 
 # Clean build artifacts
 libsync clean

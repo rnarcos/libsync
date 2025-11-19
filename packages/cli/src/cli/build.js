@@ -3,12 +3,15 @@
  * Comprehensive build process with TypeScript compilation, bundling, and packaging
  */
 
+import { mkdir, rm } from 'fs/promises';
 import path from 'path';
+
+import chalk from 'chalk';
 import spawn from 'cross-spawn';
 import fse from 'fs-extra';
 import { build } from 'tsup';
-import { mkdir, rm } from 'fs/promises';
-import chalk from 'chalk';
+
+import { getConfig, initConfig } from '../utils/config.js';
 import {
   cleanBuild,
   getPackageBuilds,
@@ -22,7 +25,6 @@ import {
   PackageError,
   ConfigurationError,
 } from '../utils/package.js';
-import { getConfig, initConfig } from '../utils/config.js';
 
 /**
  * Build options type definition
@@ -338,22 +340,18 @@ async function loadTsupConfiguration(packagePath, builds, verbose) {
 
     const tsupConfig = config.commands.build.tsup;
 
-    // Check if format-specific or universal
-    const hasFormatKeys =
-      'default' in tsupConfig || 'esm' in tsupConfig || 'cjs' in tsupConfig;
-
-    if (hasFormatKeys) {
-      // Format-specific: { default: {...}, esm: {...}, cjs: {...} }
-      const formatConfig = /** @type {Record<string, any>} */ (tsupConfig);
+    // Check if it's a function
+    if (typeof tsupConfig === 'function') {
+      // Function format: (options) => config
       return Object.keys(builds).reduce(
         (acc, format) => ({
           ...acc,
-          [format]: formatConfig[format] || formatConfig.default,
+          [format]: tsupConfig({ type: /** @type {'esm'|'cjs'} */ (format) }),
         }),
         /** @type {Record<string, any>} */ ({}),
       );
     } else {
-      // Universal: apply same config to all formats
+      // Object format: apply same config to all formats
       return Object.keys(builds).reduce(
         (acc, format) => ({
           ...acc,

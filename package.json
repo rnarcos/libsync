@@ -42,22 +42,10 @@
     "package.json": [
       "npx npmPkgJsonLint"
     ],
-    "packages/*/package.json": [
+    "(packages|recipes)/*/(src/**|package.json)": [
       "npx libsync package-json --mode development"
     ],
-    "packages/*/src": [
-      "npx libsync package-json --mode development"
-    ],
-    "configs/*/package.json": [
-      "npx libsync package-json --mode development"
-    ],
-    "configs/*/src": [
-      "npx libsync package-json --mode development"
-    ],
-    "recipes/*/package.json": [
-      "npx libsync package-json --mode development"
-    ],
-    "recipes/*/src": [
+    "configs/!(eslint-config|prettier-config)/(src/**|package.json)": [
       "npx libsync package-json --mode development"
     ]
   },
@@ -66,12 +54,13 @@
     "@changesets/cli": "^2.29.7",
     "@libsync/eslint-config": "workspace:*",
     "@libsync/prettier-config": "workspace:*",
+    "@libsync/typescript-config": "workspace:*",
     "@turbo/gen": "^1.12.4",
     "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
     "@typescript-eslint/parser": "^8.44.0",
     "concurrently": "^8.2.2",
-    "eslint": "^9.35.0",
+    "eslint": "^8.57.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-turbo": "^2.5.6",
