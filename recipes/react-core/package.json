@@ -21,7 +21,7 @@
     "build": "libsync build",
     "clean": "libsync clean",
     "dev": "concurrently -n \"package.json,storybook,tailwind\" -c \"cyan,magenta,green\" \"pnpm dev:package-json --watch\" \"CI=true pnpm storybook:watch\" \"pnpm tailwind:watch\"",
-    "dev:package-json": "libsync package-json --mode development --",
+    "dev:package-json": "libsync package-json --mode development",
     "format": "prettier --check \"src/**/*.{ts,tsx,js,jsx}\"",
     "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx}\"",
     "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\"",
