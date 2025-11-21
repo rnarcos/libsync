@@ -751,8 +751,19 @@ export function getProxyFolders(rootPath) {
   try {
     const publicFiles = getPublicFiles(getSourcePath(rootPath));
     return Object.fromEntries(
-      Object.keys(publicFiles)
-        .map((name) => [name.replace(/\/index$/, ''), name])
+      Object.entries(publicFiles)
+        .map(([name, filePath]) => {
+          const proxyName = name.replace(/\/index$/, '');
+
+          // Check if this is a directory export (file path ends with /index.ext)
+          const isDirectoryExport = /\/index\.[^/]+$/.test(filePath);
+
+          // For directory exports, we need to preserve '/index' in the path for type lookup
+          // e.g., 'cli' export -> 'cli/index' path for finding cli/index.d.ts
+          const relativePath = isDirectoryExport ? `${proxyName}/index` : name;
+
+          return [proxyName, relativePath];
+        })
         .filter(([name]) => name !== 'index'),
     );
   } catch (error) {
