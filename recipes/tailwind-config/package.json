@@ -16,6 +16,7 @@
   "type": "module",
   "main": "./src/index.js",
   "module": "./src/index.js",
+  "types": "./src/index.js",
   "scripts": {
     "build": "libsync build",
     "clean": "libsync clean",
@@ -45,14 +46,17 @@
   },
   "exports": {
     "./base": {
+      "types": "./src/base.js",
       "import": "./src/base.js",
       "require": "./src/base.js"
     },
     ".": {
+      "types": "./src/index.js",
       "import": "./src/index.js",
       "require": "./src/index.js"
     },
     "./native": {
+      "types": "./src/native.js",
       "import": "./src/native.js",
       "require": "./src/native.js"
     },

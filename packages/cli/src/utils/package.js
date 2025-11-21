@@ -1041,7 +1041,8 @@ export function getPackageJson(rootPath, mode = 'development') {
   // Always update main/module/types based on build configuration
   // These are separate from the exports map
   // Ensure all paths start with ./
-  const originalHadTypes = 'types' in pkg;
+  // Check if types should be generated based on config, not just if original package.json had types
+  const shouldIncludeTypes = shouldGenerateTypes(rootPath);
 
   if ('cjs' in builds) {
     if (isProduction) {
@@ -1053,12 +1054,12 @@ export function getPackageJson(rootPath, mode = 'development') {
       );
       pkg.main = ensureRelativePath(join(cjsDir, `index${cjsIndexExt}`));
       // Only set types if the .d.ts file exists
-      if (originalHadTypes && hasTypesFile(rootPath, join(cjsDir, 'index'))) {
+      if (shouldIncludeTypes && hasTypesFile(rootPath, join(cjsDir, 'index'))) {
         pkg.types = ensureRelativePath(join(cjsDir, 'index.d.ts'));
       }
     } else {
       pkg.main = ensureRelativePath(join(sourceDir, `index${indexExtension}`));
-      if (originalHadTypes) {
+      if (shouldIncludeTypes) {
         pkg.types = ensureRelativePath(
           join(sourceDir, `index${indexExtension}`),
         );
@@ -1076,14 +1077,14 @@ export function getPackageJson(rootPath, mode = 'development') {
       );
       pkg.module = ensureRelativePath(join(esmDir, `index${esmIndexExt}`));
       // Only set types if the .d.ts file exists
-      if (originalHadTypes && hasTypesFile(rootPath, join(esmDir, 'index'))) {
+      if (shouldIncludeTypes && hasTypesFile(rootPath, join(esmDir, 'index'))) {
         pkg.types = ensureRelativePath(join(esmDir, 'index.d.ts'));
       }
     } else {
       pkg.module = ensureRelativePath(
         join(sourceDir, `index${indexExtension}`),
       );
-      if (originalHadTypes) {
+      if (shouldIncludeTypes) {
         pkg.types = ensureRelativePath(
           join(sourceDir, `index${indexExtension}`),
         );
@@ -1123,8 +1124,8 @@ export function writePackageJson(
     // Read original package.json object (preserves property order)
     const pkg = JSON.parse(currentContents);
 
-    // Check if original package.json had a types field BEFORE any modifications
-    const originalHadTypes = 'types' in pkg;
+    // Check if types should be generated based on config, not just if original package.json had types
+    const shouldIncludeTypes = shouldGenerateTypes(rootPath);
 
     // Calculate what the new values should be
     const sourcePath = getSourcePath(rootPath);
@@ -1149,8 +1150,8 @@ export function writePackageJson(
       const relativePath = removeExt(path).replace(sourcePath, '');
       const exportConfig = /** @type {Record<string, string>} */ ({});
 
-      // Types field will be present only if it was originally present
-      const willHaveTypesField = originalHadTypes;
+      // Types field will be present based on config
+      const willHaveTypesField = shouldIncludeTypes;
 
       if (!isProduction && !isProductionTypes) {
         // Development mode: formats point to source file with original extension
@@ -1273,7 +1274,10 @@ export function writePackageJson(
         );
         pkg.main = ensureRelativePath(join(cjsDir, `index${cjsIndexExt}`));
         // Only set types if the .d.ts file exists
-        if (originalHadTypes && hasTypesFile(rootPath, join(cjsDir, 'index'))) {
+        if (
+          shouldIncludeTypes &&
+          hasTypesFile(rootPath, join(cjsDir, 'index'))
+        ) {
           pkg.types = ensureRelativePath(join(cjsDir, 'index.d.ts'));
         }
       } else if (isProductionTypes) {
@@ -1281,14 +1285,17 @@ export function writePackageJson(
         pkg.main = ensureRelativePath(
           join(sourceDir, `index${indexExtension}`),
         );
-        if (originalHadTypes && hasTypesFile(rootPath, join(cjsDir, 'index'))) {
+        if (
+          shouldIncludeTypes &&
+          hasTypesFile(rootPath, join(cjsDir, 'index'))
+        ) {
           pkg.types = ensureRelativePath(join(cjsDir, 'index.d.ts'));
         }
       } else {
         pkg.main = ensureRelativePath(
           join(sourceDir, `index${indexExtension}`),
         );
-        if (originalHadTypes) {
+        if (shouldIncludeTypes) {
           pkg.types = ensureRelativePath(
             join(sourceDir, `index${indexExtension}`),
           );
@@ -1306,7 +1313,10 @@ export function writePackageJson(
         );
         pkg.module = ensureRelativePath(join(esmDir, `index${esmIndexExt}`));
         // Only set types if the .d.ts file exists
-        if (originalHadTypes && hasTypesFile(rootPath, join(esmDir, 'index'))) {
+        if (
+          shouldIncludeTypes &&
+          hasTypesFile(rootPath, join(esmDir, 'index'))
+        ) {
           pkg.types = ensureRelativePath(join(esmDir, 'index.d.ts'));
         }
       } else if (isProductionTypes) {
@@ -1314,14 +1324,17 @@ export function writePackageJson(
         pkg.module = ensureRelativePath(
           join(sourceDir, `index${indexExtension}`),
         );
-        if (originalHadTypes && hasTypesFile(rootPath, join(esmDir, 'index'))) {
+        if (
+          shouldIncludeTypes &&
+          hasTypesFile(rootPath, join(esmDir, 'index'))
+        ) {
           pkg.types = ensureRelativePath(join(esmDir, 'index.d.ts'));
         }
       } else {
         pkg.module = ensureRelativePath(
           join(sourceDir, `index${indexExtension}`),
         );
-        if (originalHadTypes) {
+        if (shouldIncludeTypes) {
           pkg.types = ensureRelativePath(
             join(sourceDir, `index${indexExtension}`),
           );
@@ -1795,7 +1808,8 @@ function generateProxyPackageJson(
   const mainDir = getCJSDir();
   const moduleDir = getESMDir();
   const prefix = '../'.repeat(moduleName.split('/').length);
-  const originalHadTypes = 'types' in pkg;
+  // Check if types should be generated based on config, not just if original package.json had types
+  const shouldIncludeTypes = shouldGenerateTypes(rootPath);
 
   const isProduction = mode === 'production';
   const isProductionTypes = mode === 'production-types';
@@ -1816,8 +1830,8 @@ function generateProxyPackageJson(
         false,
       );
       proxyPkg.module = join(prefix, moduleDir, `${path}${esmExt}`);
-      // Only include types if .d.ts exists and original package.json had types field
-      if (originalHadTypes && hasTypesFile(rootPath, join(moduleDir, path))) {
+      // Only include types if .d.ts exists and types should be generated
+      if (shouldIncludeTypes && hasTypesFile(rootPath, join(moduleDir, path))) {
         proxyPkg.types = join(prefix, moduleDir, `${path}.d.ts`);
       }
     }
@@ -1829,8 +1843,8 @@ function generateProxyPackageJson(
         false,
       );
       proxyPkg.main = join(prefix, mainDir, `${path}${cjsExt}`);
-      // Only include types if .d.ts exists and original package.json had types field
-      if (originalHadTypes && hasTypesFile(rootPath, join(mainDir, path))) {
+      // Only include types if .d.ts exists and types should be generated
+      if (shouldIncludeTypes && hasTypesFile(rootPath, join(mainDir, path))) {
         proxyPkg.types = join(prefix, mainDir, `${path}.d.ts`);
       }
     }
@@ -1848,7 +1862,7 @@ function generateProxyPackageJson(
     }
 
     // Types point to built .d.ts files
-    if (originalHadTypes) {
+    if (shouldIncludeTypes) {
       // ESM types take precedence over CJS types
       if ('esm' in builds && hasTypesFile(rootPath, join(moduleDir, path))) {
         proxyPkg.types = join(prefix, moduleDir, `${path}.d.ts`);
@@ -1865,8 +1879,8 @@ function generateProxyPackageJson(
     const srcPath = join(prefix, sourceDir, `${path}${srcExt}`);
     proxyPkg.main = srcPath;
     proxyPkg.module = srcPath;
-    // Only set types in dev mode if original package.json had types field
-    if (originalHadTypes) {
+    // Only set types in dev mode if types should be generated
+    if (shouldIncludeTypes) {
       proxyPkg.types = srcPath; // Points to .ts/.tsx files in dev
     }
   }
