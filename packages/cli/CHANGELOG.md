@@ -1,5 +1,11 @@
 # libsync
 
+## 1.0.1
+
+### Patch Changes
+
+- [`4ba5575`](https://github.com/rnarcos/libsync/commit/4ba5575afb8c110261cef40a397c734c232bc78c) Thanks [@rnarcos](https://github.com/rnarcos)! - Fixed proxy package.json files missing `types` field in `--types-only` mode. Directory exports (like `cli`, `config`) now correctly reference their type definition files at `esm/[module]/index.d.ts` instead of being omitted.
+
 ## 1.0.0
 
 ### Major Changes
