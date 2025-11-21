@@ -33,6 +33,11 @@ program
   .description('Build a library package using tsup')
   .option('-p, --path <path>', 'Package path to build', process.cwd())
   .option('-w, --watch', 'Watch for file changes and rebuild', false)
+  .option(
+    '--types-only',
+    'Only build TypeScript type definitions (production-types mode)',
+    false,
+  )
   .option('--skip-validation', 'Skip project structure validation', false)
   .action(async (options, cmd) => {
     const globalOptions = cmd.parent?.opts() || {};

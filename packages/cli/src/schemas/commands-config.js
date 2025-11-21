@@ -26,6 +26,7 @@ export const commandsConfigSchema = {
   build: z.object({
     path: validPath.default(process.cwd()),
     watch: z.boolean().default(false),
+    typesOnly: z.boolean().default(false),
     skipValidation: z.boolean().default(false),
     verbose: z.boolean().default(false),
   }),
@@ -118,6 +119,7 @@ export const tsConfigSchema = z.object({
  * @typedef {Object} BuildOptions
  * @property {string} path - Package path to build
  * @property {boolean} watch - Watch for file changes and rebuild
+ * @property {boolean} typesOnly - Only build TypeScript type definitions (production-types mode)
  * @property {boolean} skipValidation - Skip project structure validation
  * @property {boolean} verbose - Enable verbose logging
  */

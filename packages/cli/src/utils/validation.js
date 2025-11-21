@@ -104,13 +104,18 @@ export function validatePackageJson(packagePath) {
     const validatedPackage = validationResult.data;
 
     // Check for common configuration issues
+    // Note: Build configuration is now primarily driven by libsync.config.mjs,
+    // but package.json fields are still important for package consumers
     if (
       !validatedPackage.main &&
       !validatedPackage.module &&
       !validatedPackage.bin
     ) {
       warnings.push(
-        'No main, module, or bin field found - package may not be buildable',
+        'No main, module, or bin field found - these will be auto-generated during build',
+      );
+      warnings.push(
+        '  Configure build formats in libsync.config.mjs: commands.build.formats',
       );
     }
 
@@ -126,7 +131,7 @@ export function validatePackageJson(packagePath) {
       (validatedPackage.main || validatedPackage.module)
     ) {
       warnings.push(
-        'No types/typings field found - TypeScript consumers may not get type definitions',
+        'No types/typings field found - configure in libsync.config.mjs: commands.build.formats.types',
       );
     }
 
@@ -224,6 +229,72 @@ export async function validateTsConfig(packagePath) {
     warnings.push(
       '  Consider creating tsconfig.build.json that extends tsconfig.json',
     );
+  }
+
+  return { isValid: errors.length === 0, warnings, errors };
+}
+
+/**
+ * Build configuration validation result
+ * @typedef {Object} BuildConfigValidationResult
+ * @property {boolean} isValid - Whether the configuration is valid
+ * @property {string[]} warnings - Warning messages
+ * @property {string[]} errors - Error messages
+ */
+
+/**
+ * Validates build configuration from libsync.config.mjs
+ * @param {string} packagePath - Path to the package directory
+ * @returns {BuildConfigValidationResult} Validation result
+ */
+export function validateBuildConfig(packagePath) {
+  const warnings = /** @type {string[]} */ ([]);
+  const errors = /** @type {string[]} */ ([]);
+  const config = getConfig();
+
+  // Check if build formats are configured
+  const formats = config?.commands?.build?.formats || {
+    cjs: 'cjs',
+    esm: 'esm',
+    types: true,
+  };
+
+  // Validate CJS directory if enabled
+  if (formats.cjs !== false) {
+    const cjsDir =
+      typeof formats.cjs === 'string'
+        ? formats.cjs
+        : config?.directories?.cjs || 'cjs';
+    const cjsPath = join(packagePath, cjsDir);
+    // Only warn during build if the directory will be created
+    // This is informational, not an error
+  }
+
+  // Validate ESM directory if enabled
+  if (formats.esm !== false) {
+    const esmDir =
+      typeof formats.esm === 'string'
+        ? formats.esm
+        : config?.directories?.esm || 'esm';
+    const esmPath = join(packagePath, esmDir);
+    // Only warn during build if the directory will be created
+    // This is informational, not an error
+  }
+
+  // Validate types configuration
+  if (formats.types === true) {
+    const buildConfigFile =
+      config?.typescript?.buildConfigFile || 'tsconfig.build.json';
+    const buildConfigPath = join(packagePath, buildConfigFile);
+
+    if (!existsSync(buildConfigPath)) {
+      warnings.push(
+        `Types generation is enabled but ${buildConfigFile} not found - types will not be generated`,
+      );
+      warnings.push(
+        `  Set 'commands.build.formats.types: false' in libsync.config.mjs to disable this warning`,
+      );
+    }
   }
 
   return { isValid: errors.length === 0, warnings, errors };
@@ -435,6 +506,19 @@ export async function checkProjectStructure(projectPath, command) {
       }
 
       allWarnings.push(...sourceValidation.warnings);
+
+      console.log(chalk.gray('   Validating build configuration...'));
+      const buildConfigValidation = validateBuildConfig(projectPath);
+
+      if (!buildConfigValidation.isValid) {
+        hasErrors = true;
+        console.log(chalk.red('❌ Build configuration validation failed:'));
+        buildConfigValidation.errors.forEach((error) => {
+          console.log(chalk.red(`   • ${error}`));
+        });
+      }
+
+      allWarnings.push(...buildConfigValidation.warnings);
     }
   }
 
