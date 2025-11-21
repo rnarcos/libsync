@@ -227,7 +227,7 @@ async function processCurrentPackage(
       }
     } else {
       // In write mode, update everything
-      makeProxies(packagePath, mode === 'production');
+      makeProxies(packagePath, mode);
       makeGitignore(packagePath); // Update .gitignore with proxies (if writeToGitIgnore is true)
       console.log(chalk.green(`   ✅ Updated ${packageInfo.name}`));
     }
@@ -286,7 +286,7 @@ async function startWatchMode(packagePath, mode, verbose) {
       }
 
       writePackageJson(packagePath, mode);
-      makeProxies(packagePath, mode === 'production');
+      makeProxies(packagePath, mode);
       makeGitignore(packagePath);
       console.log(chalk.blue(`🔄 Updated ${packageInfo.name} (${filePath})`));
     } catch (error) {
@@ -359,7 +359,7 @@ async function startWatchModeForMultiplePackages(packagePaths, mode, verbose) {
         }
 
         writePackageJson(packagePath, mode);
-        makeProxies(packagePath, mode === 'production');
+        makeProxies(packagePath, mode);
         makeGitignore(packagePath);
         console.log(chalk.blue(`🔄 Updated ${pkgInfo.name} (${filePath})`));
       } catch (error) {

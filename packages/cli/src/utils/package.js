@@ -303,6 +303,38 @@ export function hasTypesField(rootPath) {
 }
 
 /**
+ * Check if TypeScript types should be generated based on config and tsconfig.build.json existence
+ * @param {string} rootPath - Root path of the package
+ * @returns {boolean} Whether types should be generated
+ */
+export function shouldGenerateTypes(rootPath) {
+  try {
+    const config = getConfig();
+
+    // Get types config from formats (defaults to true)
+    const generateTypes = config?.commands?.build?.formats?.types ?? true;
+
+    if (!generateTypes) {
+      return false;
+    }
+
+    // Only generate if tsconfig.build.json exists
+    const buildConfigFile =
+      config?.typescript?.buildConfigFile || 'tsconfig.build.json';
+    const tsconfigPath = join(rootPath, buildConfigFile);
+
+    return existsSync(tsconfigPath);
+  } catch (error) {
+    console.warn(
+      chalk.yellow(
+        `Warning: Could not determine if types should be generated: ${error instanceof Error ? error.message : String(error)}`,
+      ),
+    );
+    return false;
+  }
+}
+
+/**
  * Get build configurations for different output formats
  * @param {string} rootPath - Root path of the package
  * @returns {Record<string, string>} Build format to directory mapping
@@ -310,18 +342,28 @@ export function hasTypesField(rootPath) {
 export function getPackageBuilds(rootPath) {
   try {
     const pkg = readPackageJson(rootPath);
+    const config = getConfig();
 
     /** @type {Record<string, string>} */
     const builds = {};
 
-    // Add CJS build if main field exists
-    if (pkg.main) {
-      builds.cjs = getCJSDir();
+    // Get format configuration from config (source of truth)
+    const formats = config?.commands?.build?.formats || {
+      cjs: 'cjs',
+      esm: 'esm',
+      types: true,
+    };
+
+    // Add CJS build if enabled in config
+    if (formats.cjs !== false) {
+      // Use explicit path from config, or fall back to directories.cjs, or default 'cjs'
+      builds.cjs = typeof formats.cjs === 'string' ? formats.cjs : getCJSDir();
     }
 
-    // Add ESM build if module field exists
-    if (pkg.module) {
-      builds.esm = getESMDir();
+    // Add ESM build if enabled in config
+    if (formats.esm !== false) {
+      // Use explicit path from config, or fall back to directories.esm, or default 'esm'
+      builds.esm = typeof formats.esm === 'string' ? formats.esm : getESMDir();
     }
 
     // For binary packages, ensure we have at least one build format
@@ -332,12 +374,12 @@ export function getPackageBuilds(rootPath) {
 
     if (Object.keys(builds).length === 0) {
       throw new ConfigurationError(
-        'No build formats detected in package.json',
+        'No build formats detected in libsync.config.mjs',
         [
-          'Add "main" field for CommonJS output',
-          'Add "module" field for ESM output',
-          'Add "bin" field for CLI applications',
-          'Example: "main": "./cjs/index.cjs", "module": "./esm/index.js"',
+          'Set "commands.build.formats.cjs" to a directory path to enable CJS output',
+          'Set "commands.build.formats.esm" to a directory path to enable ESM output',
+          'Set "bin" field in package.json for CLI applications',
+          'Example: commands: { build: { formats: { cjs: "cjs", esm: "esm" } } }',
         ],
       );
     }
@@ -1083,6 +1125,7 @@ export function writePackageJson(
     const builds = getPackageBuilds(rootPath);
 
     const isProduction = mode === 'production';
+    const isProductionTypes = mode === 'production-types';
     const indexExtension = getIndexFileExtension(sourcePath, isProduction);
     // const buildKeys = Object.keys(builds); // Currently unused
 
@@ -1098,7 +1141,7 @@ export function writePackageJson(
       // Types field will be present only if it was originally present
       const willHaveTypesField = originalHadTypes;
 
-      if (!isProduction) {
+      if (!isProduction && !isProductionTypes) {
         // Development mode: formats point to source file with original extension
         const originalExtension = path.match(/\.[^.]+$/)?.[0] || '.js';
         const sourceExport = `./${join(sourceDir, relativePath)}${originalExtension}`;
@@ -1114,6 +1157,38 @@ export function writePackageJson(
         }
         if ('cjs' in builds) {
           exportConfig.require = sourceExport; // main field present
+        }
+
+        return exportConfig;
+      }
+
+      if (isProductionTypes) {
+        // Production-types mode: types point to built files, but import/require point to source
+        const originalExtension = path.match(/\.[^.]+$/)?.[0] || '.js';
+        const sourceExport = `./${join(sourceDir, relativePath)}${originalExtension}`;
+
+        // Add types export first (pointing to built .d.ts files)
+        if (willHaveTypesField) {
+          // ESM types take precedence over CJS types
+          if (
+            'esm' in builds &&
+            hasTypesFile(rootPath, join(esmDir, relativePath))
+          ) {
+            exportConfig.types = `./${join(esmDir, relativePath)}.d.ts`;
+          } else if (
+            'cjs' in builds &&
+            hasTypesFile(rootPath, join(cjsDir, relativePath))
+          ) {
+            exportConfig.types = `./${join(cjsDir, relativePath)}.d.ts`;
+          }
+        }
+
+        // Add exports pointing to source files
+        if ('esm' in builds) {
+          exportConfig.import = sourceExport;
+        }
+        if ('cjs' in builds) {
+          exportConfig.require = sourceExport;
         }
 
         return exportConfig;
@@ -1190,6 +1265,14 @@ export function writePackageJson(
         if (originalHadTypes && hasTypesFile(rootPath, join(cjsDir, 'index'))) {
           pkg.types = ensureRelativePath(join(cjsDir, 'index.d.ts'));
         }
+      } else if (isProductionTypes) {
+        // Production-types mode: main points to source, types point to built .d.ts
+        pkg.main = ensureRelativePath(
+          join(sourceDir, `index${indexExtension}`),
+        );
+        if (originalHadTypes && hasTypesFile(rootPath, join(cjsDir, 'index'))) {
+          pkg.types = ensureRelativePath(join(cjsDir, 'index.d.ts'));
+        }
       } else {
         pkg.main = ensureRelativePath(
           join(sourceDir, `index${indexExtension}`),
@@ -1212,6 +1295,14 @@ export function writePackageJson(
         );
         pkg.module = ensureRelativePath(join(esmDir, `index${esmIndexExt}`));
         // Only set types if the .d.ts file exists
+        if (originalHadTypes && hasTypesFile(rootPath, join(esmDir, 'index'))) {
+          pkg.types = ensureRelativePath(join(esmDir, 'index.d.ts'));
+        }
+      } else if (isProductionTypes) {
+        // Production-types mode: module points to source, types point to built .d.ts
+        pkg.module = ensureRelativePath(
+          join(sourceDir, `index${indexExtension}`),
+        );
         if (originalHadTypes && hasTypesFile(rootPath, join(esmDir, 'index'))) {
           pkg.types = ensureRelativePath(join(esmDir, 'index.d.ts'));
         }
@@ -1606,9 +1697,9 @@ export function cleanProxies(rootPath) {
 /**
  * Create proxy packages for sub-modules
  * @param {string} rootPath - Root path of the package
- * @param {boolean} [prod=true] - Whether to generate production or development proxies
+ * @param {string} [mode='production'] - Mode: 'production', 'development', or 'production-types'
  */
-export function makeProxies(rootPath, prod = true) {
+export function makeProxies(rootPath, mode = 'production') {
   try {
     // Clean existing proxies first
     cleanProxies(rootPath);
@@ -1631,7 +1722,7 @@ export function makeProxies(rootPath, prod = true) {
           rootPath,
           name,
           path,
-          prod,
+          mode,
         );
         writeFileSync(join(proxyDir, 'package.json'), proxyPackageJson);
 
@@ -1648,11 +1739,16 @@ export function makeProxies(rootPath, prod = true) {
       }
     });
 
-    const mode = prod ? 'production' : 'development';
+    const modeLabel =
+      mode === 'production'
+        ? 'production'
+        : mode === 'production-types'
+          ? 'production-types'
+          : 'development';
     if (created.length > 0) {
       console.log(
         chalk.green(
-          `   Created ${created.length} ${mode} proxy ${created.length === 1 ? 'package' : 'packages'}: ${created.join(', ')}`,
+          `   Created ${created.length} ${modeLabel} proxy ${created.length === 1 ? 'package' : 'packages'}: ${created.join(', ')}`,
         ),
       );
     }
@@ -1673,10 +1769,15 @@ export function makeProxies(rootPath, prod = true) {
  * @param {string} rootPath - Root path of the package
  * @param {string} moduleName - Name of the module
  * @param {string} path - Path to the module
- * @param {boolean} [prod=true] - Whether to generate production or development proxy
+ * @param {string} [mode='production'] - Mode: 'production', 'development', or 'production-types'
  * @returns {string} JSON string for proxy package.json
  */
-function generateProxyPackageJson(rootPath, moduleName, path, prod = true) {
+function generateProxyPackageJson(
+  rootPath,
+  moduleName,
+  path,
+  mode = 'production',
+) {
   const pkg = readPackageJson(rootPath);
   const builds = getPackageBuilds(rootPath);
   const sourceDir = getSourceDir();
@@ -1685,6 +1786,9 @@ function generateProxyPackageJson(rootPath, moduleName, path, prod = true) {
   const prefix = '../'.repeat(moduleName.split('/').length);
   const originalHadTypes = 'types' in pkg;
 
+  const isProduction = mode === 'production';
+  const isProductionTypes = mode === 'production-types';
+
   /** @type {Record<string, any>} */
   const proxyPkg = {
     name: `${pkg.name}/${moduleName}`,
@@ -1692,7 +1796,7 @@ function generateProxyPackageJson(rootPath, moduleName, path, prod = true) {
     sideEffects: false,
   };
 
-  if (prod) {
+  if (isProduction) {
     // Production mode - point to built files with detected extensions
     if ('esm' in builds) {
       const esmExt = getActualFileExtension(
@@ -1716,6 +1820,31 @@ function generateProxyPackageJson(rootPath, moduleName, path, prod = true) {
       proxyPkg.main = join(prefix, mainDir, `${path}${cjsExt}`);
       // Only include types if .d.ts exists and original package.json had types field
       if (originalHadTypes && hasTypesFile(rootPath, join(mainDir, path))) {
+        proxyPkg.types = join(prefix, mainDir, `${path}.d.ts`);
+      }
+    }
+  } else if (isProductionTypes) {
+    // Production-types mode - types point to built files, main/module point to source
+    const srcExt = getActualFileExtension(rootPath, path, true);
+    const srcPath = join(prefix, sourceDir, `${path}${srcExt}`);
+
+    // Main and module point to source
+    if ('cjs' in builds) {
+      proxyPkg.main = srcPath;
+    }
+    if ('esm' in builds) {
+      proxyPkg.module = srcPath;
+    }
+
+    // Types point to built .d.ts files
+    if (originalHadTypes) {
+      // ESM types take precedence over CJS types
+      if ('esm' in builds && hasTypesFile(rootPath, join(moduleDir, path))) {
+        proxyPkg.types = join(prefix, moduleDir, `${path}.d.ts`);
+      } else if (
+        'cjs' in builds &&
+        hasTypesFile(rootPath, join(mainDir, path))
+      ) {
         proxyPkg.types = join(prefix, mainDir, `${path}.d.ts`);
       }
     }

@@ -18,7 +18,7 @@ import {
   getAllBuildFiles,
   getSourcePath,
   isBinaryPackage,
-  hasTypesField,
+  shouldGenerateTypes,
   makeGitignore,
   makeProxies,
   writePackageJson,
@@ -31,6 +31,7 @@ import {
  * @typedef {Object} BuildOptions
  * @property {string} path - Package path to build
  * @property {boolean} watch - Watch for file changes and rebuild
+ * @property {boolean} typesOnly - Only build TypeScript type definitions (production-types mode)
  * @property {boolean} verbose - Enable verbose logging
  */
 
@@ -40,12 +41,19 @@ import {
  * @returns {Promise<void>} Build completion promise
  */
 export async function buildCommand(options) {
-  const { path: packagePath, watch: watchMode, verbose } = options;
+  const { path: packagePath, watch: watchMode, typesOnly, verbose } = options;
 
   // Initialize config before any operations
   await initConfig(packagePath);
 
   console.log(chalk.blue(`🔨 Building package at: ${packagePath}`));
+  if (typesOnly) {
+    console.log(
+      chalk.blue(
+        '📘 Types-only mode: building type definitions only (production-types mode)',
+      ),
+    );
+  }
   if (watchMode) {
     console.log(chalk.blue('👀 Watch mode enabled - will rebuild on changes'));
   }
@@ -93,8 +101,8 @@ export async function buildCommand(options) {
       }),
     );
 
-    // Step 4: TypeScript compilation for packages with types field
-    if (hasTypesField(packagePath)) {
+    // Step 4: TypeScript compilation (if types generation is enabled)
+    if (shouldGenerateTypes(packagePath)) {
       console.log(chalk.gray('📝 Step 4: Running TypeScript compilation...'));
       await runTypeScriptCompilation(packagePath, builds, verbose);
     } else {
@@ -106,60 +114,87 @@ export async function buildCommand(options) {
       );
     }
 
-    // Step 5: Load and apply tsup configuration
-    console.log(chalk.gray('📝 Step 5: Loading build configuration...'));
-    const tsupConfigOverrides = await loadTsupConfiguration(
-      packagePath,
-      builds,
-      verbose,
-    );
+    // For types-only mode, skip tsup bundling and use production-types package.json
+    if (typesOnly) {
+      console.log(
+        chalk.gray('📝 Step 5: Skipping tsup bundling (types-only mode)'),
+      );
+      console.log(chalk.gray('📝 Step 6: Generating package metadata...'));
+      makeGitignore(packagePath);
+      makeProxies(packagePath, 'production-types');
 
-    // Step 6: Run tsup builds for each format
-    console.log(chalk.gray('📝 Step 6: Building with tsup...'));
-    for (const [format, outDir] of Object.entries(builds)) {
-      console.log(chalk.blue(`   Building ${format} format...`));
-
-      try {
-        await build({
-          ...tsupConfigOverrides[format],
-          entry,
-          format: /** @type {import('tsup').Format} */ (format),
-          outDir: path.join(packagePath, outDir),
-          splitting: true,
-          watch: watchMode,
-          esbuildOptions(options) {
-            options.chunkNames = '__chunks/[hash]';
-          },
-        });
-
-        console.log(chalk.green(`   ✅ ${format} build completed`));
-      } catch (error) {
-        throw new PackageError(
-          `Failed to build ${format} format: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
-    }
-
-    // Step 7: Generate .gitignore and proxies (but keep package.json in dev mode)
-    console.log(chalk.gray('📝 Step 7: Generating package metadata...'));
-    makeGitignore(packagePath);
-    makeProxies(packagePath, true); // true = production mode
-
-    // Step 8: Final step - Update package.json to production mode (only if everything succeeded)
-    console.log(
-      chalk.gray('📝 Step 8: Finalizing package.json for production...'),
-    );
-    try {
-      writePackageJson(packagePath, 'production');
-    } catch (finalError) {
-      // If final step fails, ensure package.json is in dev mode
-      console.error(
-        chalk.red(
-          '❌ Failed to finalize package.json, reverting to dev mode...',
+      console.log(
+        chalk.gray(
+          '📝 Step 7: Finalizing package.json in production-types mode...',
         ),
       );
-      writePackageJson(packagePath, 'development');
-      throw finalError;
+      try {
+        writePackageJson(packagePath, 'production-types');
+      } catch (finalError) {
+        console.error(
+          chalk.red(
+            '❌ Failed to finalize package.json, reverting to dev mode...',
+          ),
+        );
+        writePackageJson(packagePath, 'development');
+        throw finalError;
+      }
+    } else {
+      // Step 5: Load and apply tsup configuration
+      console.log(chalk.gray('📝 Step 5: Loading build configuration...'));
+      const tsupConfigOverrides = await loadTsupConfiguration(
+        packagePath,
+        builds,
+        verbose,
+      );
+
+      // Step 6: Run tsup builds for each format
+      console.log(chalk.gray('📝 Step 6: Building with tsup...'));
+      for (const [format, outDir] of Object.entries(builds)) {
+        console.log(chalk.blue(`   Building ${format} format...`));
+
+        try {
+          await build({
+            ...tsupConfigOverrides[format],
+            entry,
+            format: /** @type {import('tsup').Format} */ (format),
+            outDir: path.join(packagePath, outDir),
+            splitting: true,
+            watch: watchMode,
+            esbuildOptions(options) {
+              options.chunkNames = '__chunks/[hash]';
+            },
+          });
+
+          console.log(chalk.green(`   ✅ ${format} build completed`));
+        } catch (error) {
+          throw new PackageError(
+            `Failed to build ${format} format: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      }
+
+      // Step 7: Generate .gitignore and proxies (but keep package.json in dev mode)
+      console.log(chalk.gray('📝 Step 7: Generating package metadata...'));
+      makeGitignore(packagePath);
+      makeProxies(packagePath, 'production');
+
+      // Step 8: Final step - Update package.json to production mode (only if everything succeeded)
+      console.log(
+        chalk.gray('📝 Step 8: Finalizing package.json for production...'),
+      );
+      try {
+        writePackageJson(packagePath, 'production');
+      } catch (finalError) {
+        // If final step fails, ensure package.json is in dev mode
+        console.error(
+          chalk.red(
+            '❌ Failed to finalize package.json, reverting to dev mode...',
+          ),
+        );
+        writePackageJson(packagePath, 'development');
+        throw finalError;
+      }
     }
 
     if (watchMode) {
