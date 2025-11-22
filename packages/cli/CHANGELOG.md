@@ -1,5 +1,11 @@
 # libsync
 
+## 1.0.4
+
+### Patch Changes
+
+- [`a237a75`](https://github.com/rnarcos/libsync/commit/a237a75e54bee7a4eda7d0a33650422722a01cd5) Thanks [@rnarcos](https://github.com/rnarcos)! - Fixed `production-types` mode to preserve existing `main`/`module`/`import`/`require` paths in package.json and only update the `types` field to point to production build outputs. Previously, production-types mode would reset these fields to development (source) paths. Also removed the automatic package.json reset to development mode during cleanup, ensuring package.json is only modified when explicitly needed.
+
 ## 1.0.3
 
 ### Patch Changes
