@@ -63,54 +63,54 @@
   },
   "exports": {
     "./cli": {
-      "types": "./src/cli/index.js",
       "import": "./src/cli/index.js",
-      "require": "./src/cli/index.js"
+      "require": "./src/cli/index.js",
+      "types": "./src/cli/index.js"
     },
     "./config": {
-      "types": "./src/config/index.js",
       "import": "./src/config/index.js",
-      "require": "./src/config/index.js"
+      "require": "./src/config/index.js",
+      "types": "./src/config/index.js"
     },
     ".": {
-      "types": "./src/index.js",
       "import": "./src/index.js",
-      "require": "./src/index.js"
+      "require": "./src/index.js",
+      "types": "./src/index.js"
     },
     "./schemas/commands-config": {
-      "types": "./src/schemas/commands-config.js",
       "import": "./src/schemas/commands-config.js",
-      "require": "./src/schemas/commands-config.js"
+      "require": "./src/schemas/commands-config.js",
+      "types": "./src/schemas/commands-config.js"
     },
     "./schemas": {
-      "types": "./src/schemas/index.js",
       "import": "./src/schemas/index.js",
-      "require": "./src/schemas/index.js"
+      "require": "./src/schemas/index.js",
+      "types": "./src/schemas/index.js"
     },
     "./utils/config": {
-      "types": "./src/utils/config.js",
       "import": "./src/utils/config.js",
-      "require": "./src/utils/config.js"
+      "require": "./src/utils/config.js",
+      "types": "./src/utils/config.js"
     },
     "./utils/input": {
-      "types": "./src/utils/input.js",
       "import": "./src/utils/input.js",
-      "require": "./src/utils/input.js"
+      "require": "./src/utils/input.js",
+      "types": "./src/utils/input.js"
     },
     "./utils/package": {
-      "types": "./src/utils/package.js",
       "import": "./src/utils/package.js",
-      "require": "./src/utils/package.js"
+      "require": "./src/utils/package.js",
+      "types": "./src/utils/package.js"
     },
     "./utils/patterns": {
-      "types": "./src/utils/patterns.js",
       "import": "./src/utils/patterns.js",
-      "require": "./src/utils/patterns.js"
+      "require": "./src/utils/patterns.js",
+      "types": "./src/utils/patterns.js"
     },
     "./utils/validation": {
-      "types": "./src/utils/validation.js",
       "import": "./src/utils/validation.js",
-      "require": "./src/utils/validation.js"
+      "require": "./src/utils/validation.js",
+      "types": "./src/utils/validation.js"
     },
     "./package.json": "./package.json"
   }

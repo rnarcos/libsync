@@ -67,9 +67,17 @@ export async function buildCommand(options) {
   });
 
   try {
-    // Step 1: Clean existing build artifacts
-    console.log(chalk.gray('📝 Step 1: Cleaning build artifacts...'));
-    cleanBuild(packagePath);
+    // Step 1: Clean existing build artifacts (skip for types-only mode to preserve existing builds)
+    if (typesOnly) {
+      console.log(
+        chalk.gray(
+          '📝 Step 1: Skipping clean (types-only mode preserves existing builds)...',
+        ),
+      );
+    } else {
+      console.log(chalk.gray('📝 Step 1: Cleaning build artifacts...'));
+      cleanBuild(packagePath);
+    }
 
     // Step 2: Validate and get source configuration
     console.log(chalk.gray('📝 Step 2: Analyzing project structure...'));
@@ -104,7 +112,14 @@ export async function buildCommand(options) {
     // Step 4: TypeScript compilation (if types generation is enabled)
     if (shouldGenerateTypes(packagePath)) {
       console.log(chalk.gray('📝 Step 4: Running TypeScript compilation...'));
-      await runTypeScriptCompilation(packagePath, builds, verbose);
+
+      // In types-only mode, clean existing .d.ts files to avoid stale types
+      if (typesOnly) {
+        console.log(chalk.gray('   Cleaning existing type definitions...'));
+        await cleanExistingTypes(packagePath, builds, verbose);
+      }
+
+      await runTypeScriptCompilation(packagePath, sourcePath, builds, verbose);
     } else {
       const reason = isBinaryPackage(packagePath)
         ? 'binary package'
@@ -114,7 +129,7 @@ export async function buildCommand(options) {
       );
     }
 
-    // For types-only mode, skip tsup bundling and use production-types package.json
+    // For types-only mode, skip tsup bundling but update types fields in package.json
     if (typesOnly) {
       console.log(
         chalk.gray('📝 Step 5: Skipping tsup bundling (types-only mode)'),
@@ -125,7 +140,12 @@ export async function buildCommand(options) {
 
       console.log(
         chalk.gray(
-          '📝 Step 7: Finalizing package.json in production-types mode...',
+          '📝 Step 7: Updating types fields in package.json (production-types mode)...',
+        ),
+      );
+      console.log(
+        chalk.blue(
+          '   → Preserving main/module/import/require, updating only types fields',
         ),
       );
       try {
@@ -133,7 +153,7 @@ export async function buildCommand(options) {
       } catch (finalError) {
         console.error(
           chalk.red(
-            '❌ Failed to finalize package.json, reverting to dev mode...',
+            '❌ Failed to update package.json types fields, reverting to dev mode...',
           ),
         );
         writePackageJson(packagePath, 'development');
@@ -174,7 +194,7 @@ export async function buildCommand(options) {
         }
       }
 
-      // Step 7: Generate .gitignore and proxies (but keep package.json in dev mode)
+      // Step 7: Generate .gitignore and proxies (proxies already cleaned in step 1)
       console.log(chalk.gray('📝 Step 7: Generating package metadata...'));
       makeGitignore(packagePath);
       makeProxies(packagePath, 'production');
@@ -246,13 +266,94 @@ export async function buildCommand(options) {
 }
 
 /**
+ * Clean existing .d.ts files from build directories
+ * @param {string} packagePath - Package path
+ * @param {Record<string, string>} builds - Build configurations
+ * @param {boolean} verbose - Enable verbose logging
+ * @returns {Promise<void>} Cleanup promise
+ */
+async function cleanExistingTypes(packagePath, builds, verbose) {
+  const buildDirs = Object.values(builds).filter(Boolean);
+
+  /**
+   * Recursively find all .d.ts files in a directory
+   * @param {string} dir - Directory to search
+   * @returns {Promise<string[]>} Array of .d.ts file paths
+   */
+  async function findDtsFiles(dir) {
+    /** @type {string[]} */
+    const files = [];
+
+    /**
+     * Walk directory recursively
+     * @param {string} currentDir - Current directory path
+     */
+    async function walk(currentDir) {
+      const entries = await fse.readdir(currentDir, { withFileTypes: true });
+
+      for (const entry of entries) {
+        const fullPath = path.join(currentDir, entry.name);
+
+        if (entry.isDirectory()) {
+          await walk(fullPath);
+        } else if (entry.isFile() && entry.name.endsWith('.d.ts')) {
+          files.push(fullPath);
+        }
+      }
+    }
+
+    try {
+      await walk(dir);
+    } catch (error) {
+      // Silently ignore errors
+    }
+
+    return files;
+  }
+
+  for (const buildDir of buildDirs) {
+    const fullPath = path.join(packagePath, buildDir);
+    if (fse.existsSync(fullPath)) {
+      const dtsFiles = await findDtsFiles(fullPath);
+
+      for (const dtsFile of dtsFiles) {
+        try {
+          await rm(dtsFile, { force: true });
+          if (verbose) {
+            console.log(
+              chalk.gray(`   Removed: ${path.relative(packagePath, dtsFile)}`),
+            );
+          }
+        } catch (error) {
+          // Silently ignore errors
+        }
+      }
+
+      if (verbose && dtsFiles.length > 0) {
+        console.log(
+          chalk.gray(
+            `   Cleaned ${dtsFiles.length} type definition files from ${buildDir}`,
+          ),
+        );
+      }
+    }
+  }
+}
+
+/**
  * Run TypeScript compilation step
  * @param {string} packagePath - Package path
+ * @param {string} sourcePath - Source directory path
  * @param {Record<string, string>} builds - Build configurations
  * @param {boolean} verbose - Enable verbose logging
  * @returns {Promise<void>} Compilation promise
  */
-async function runTypeScriptCompilation(packagePath, builds, verbose) {
+async function runTypeScriptCompilation(
+  packagePath,
+  sourcePath,
+  builds,
+  verbose,
+) {
   const config = getConfig();
   const buildTSConfigPath = path.join(
     packagePath,
