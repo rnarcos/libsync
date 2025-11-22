@@ -2,7 +2,7 @@
   "private": false,
   "name": "libsync",
   "description": "A CLI tool for library maintainers using tsup - build, develop, and publish with ease",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "license": "MIT",
   "author": {
     "name": "Marcos Fernandes",
