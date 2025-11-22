@@ -29,24 +29,24 @@
   },
   "exports": {
     ".": {
+      "types": "./src/index.js",
       "import": "./src/index.js",
-      "require": "./src/index.js",
-      "types": "./src/index.js"
+      "require": "./src/index.js"
     },
     "./js": {
+      "types": "./src/js.json",
       "import": "./src/js.json",
-      "require": "./src/js.json",
-      "types": "./src/js.json"
+      "require": "./src/js.json"
     },
     "./react": {
+      "types": "./src/react.json",
       "import": "./src/react.json",
-      "require": "./src/react.json",
-      "types": "./src/react.json"
+      "require": "./src/react.json"
     },
     "./root": {
+      "types": "./src/root.json",
       "import": "./src/root.json",
-      "require": "./src/root.json",
-      "types": "./src/root.json"
+      "require": "./src/root.json"
     },
     "./package.json": "./package.json"
   }

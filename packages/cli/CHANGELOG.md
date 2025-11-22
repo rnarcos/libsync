@@ -1,5 +1,11 @@
 # libsync
 
+## 1.0.7
+
+### Patch Changes
+
+- [`3edce00`](https://github.com/rnarcos/libsync/commit/3edce00d0f6de2f2bc24f634fa2c91b43cd5c987) Thanks [@rnarcos](https://github.com/rnarcos)! - Following typescript specification for defining export proxies, using `types`, `import`, `require`.
+
 ## 1.0.6
 
 ### Patch Changes
