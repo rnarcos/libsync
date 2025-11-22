@@ -1,5 +1,11 @@
 # libsync
 
+## 1.0.5
+
+### Patch Changes
+
+- [`f460160`](https://github.com/rnarcos/libsync/commit/f4601604c4ca1f7f83737015d983c9b58083a9f4) Thanks [@rnarcos](https://github.com/rnarcos)! - The `clean` command explicitly resets package.json to development mode as expected.
+
 ## 1.0.4
 
 ### Patch Changes
