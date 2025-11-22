@@ -116,21 +116,22 @@ function findTypesFile(rootPath, relativePath) {
 }
 
 /**
- * Build export configuration object with consistent field ordering: import, require, types
+ * Build export configuration object with consistent field ordering: types, import, require
  * @param {{import?: string, require?: string, types?: string}} fields - Fields to include
  * @returns {Record<string, string>} Export configuration with fields in correct order
  */
 function buildExportConfig(fields) {
   const config = /** @type {Record<string, string>} */ ({});
-  // Always maintain this order: import, require, types
+  // Always maintain this order: types, import, require
+  // Types must come first for proper TypeScript resolution
+  if (fields.types !== undefined) {
+    config.types = fields.types;
+  }
   if (fields.import !== undefined) {
     config.import = fields.import;
   }
   if (fields.require !== undefined) {
     config.require = fields.require;
-  }
-  if (fields.types !== undefined) {
-    config.types = fields.types;
   }
   return config;
 }
