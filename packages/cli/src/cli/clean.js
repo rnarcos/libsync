@@ -8,6 +8,7 @@ import chalk from 'chalk';
 import { initConfig } from '../utils/config.js';
 import {
   cleanBuild,
+  writePackageJson,
   PackageError,
   ConfigurationError,
 } from '../utils/package.js';
@@ -33,6 +34,9 @@ export async function cleanCommand(options) {
   console.log(chalk.blue(`🧹 Cleaning build artifacts at: ${packagePath}`));
 
   try {
+    // Reset package.json to development mode (clean command should restore dev state)
+    writePackageJson(packagePath, 'development');
+
     cleanBuild(packagePath);
 
     if (verbose) {
