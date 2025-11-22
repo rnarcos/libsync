@@ -30,7 +30,7 @@
     "lint": "eslint \"src/**/*.{js,ts}\"",
     "lint:fix": "eslint \"src/**/*.{js,ts}\" --fix",
     "publish:staging": "node src/cli/index.js publish:staging --force",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "node src/cli/index.js build --types-only"
   },
   "dependencies": {
     "chalk": "^4.1.2",
