@@ -1215,11 +1215,11 @@ export function writePackageJson(
         const originalExtension = path.match(/\.[^.]+$/)?.[0] || '.js';
         const sourceExport = `./${join(sourceDir, relativePath)}${originalExtension}`;
 
-        // Build export config with proper field ordering: import, require, types
+        // Build export config with proper field ordering: types, import, require
         return buildExportConfig({
+          types: willHaveTypesField ? sourceExport : undefined,
           import: 'esm' in builds ? sourceExport : undefined,
           require: 'cjs' in builds ? sourceExport : undefined,
-          types: willHaveTypesField ? sourceExport : undefined,
         });
       }
 
@@ -1234,31 +1234,33 @@ export function writePackageJson(
             : `./${normalizedPath.replace(/\/index$/, '')}`;
         const existingExports = pkg.exports?.[exportKey];
 
-        // Preserve existing import/require if they exist
+        // Collect import/require values (preserve existing if they exist)
+        let importValue = undefined;
+        let requireValue = undefined;
+
         if (existingExports) {
           if (typeof existingExports === 'object') {
-            if (existingExports.import)
-              exportConfig.import = existingExports.import;
-            if (existingExports.require)
-              exportConfig.require = existingExports.require;
+            if (existingExports.import) importValue = existingExports.import;
+            if (existingExports.require) requireValue = existingExports.require;
           } else if (typeof existingExports === 'string') {
             // Single string export - determine if it's import or require based on builds
-            if ('esm' in builds) exportConfig.import = existingExports;
-            if ('cjs' in builds) exportConfig.require = existingExports;
+            if ('esm' in builds) importValue = existingExports;
+            if ('cjs' in builds) requireValue = existingExports;
           }
         } else {
           // No existing exports - default to source (current behavior)
           const originalExtension = path.match(/\.[^.]+$/)?.[0] || '.js';
           const sourceExport = `./${join(sourceDir, relativePath)}${originalExtension}`;
           if ('esm' in builds) {
-            exportConfig.import = sourceExport;
+            importValue = sourceExport;
           }
           if ('cjs' in builds) {
-            exportConfig.require = sourceExport;
+            requireValue = sourceExport;
           }
         }
 
         // Always update types to production
+        let typesValue = undefined;
         if (willHaveTypesField) {
           // ESM types take precedence over CJS types
           let exportTypesPath = null;
@@ -1275,11 +1277,16 @@ export function writePackageJson(
             );
           }
           if (exportTypesPath) {
-            exportConfig.types = `./${exportTypesPath}`;
+            typesValue = `./${exportTypesPath}`;
           }
         }
 
-        return exportConfig;
+        // Build export config with proper field ordering: types, import, require
+        return buildExportConfig({
+          types: typesValue,
+          import: importValue,
+          require: requireValue,
+        });
       }
 
       // Production mode: different formats point to different built files
@@ -1296,8 +1303,8 @@ export function writePackageJson(
       const esmExport = `./${join(esmDir, relativePath)}${esmExt}`;
       const cjsExport = `./${join(cjsDir, relativePath)}${cjsExt}`;
 
-      // Add types export first (Node.js best practice)
-      // Only include types if the .d.ts file actually exists
+      // Collect types value (only include if the .d.ts file actually exists)
+      let prodTypesValue = undefined;
       if (willHaveTypesField) {
         // ESM types take precedence over CJS types (matches package.json logic)
         let prodExportTypesPath = null;
@@ -1314,20 +1321,16 @@ export function writePackageJson(
           );
         }
         if (prodExportTypesPath) {
-          exportConfig.types = `./${prodExportTypesPath}`;
+          prodTypesValue = `./${prodExportTypesPath}`;
         }
       }
 
-      // Add exports based on what builds are configured
-      if ('esm' in builds) {
-        exportConfig.import = esmExport; // module field present
-      }
-
-      if ('cjs' in builds) {
-        exportConfig.require = cjsExport; // main field present
-      }
-
-      return exportConfig;
+      // Build export config with proper field ordering: types, import, require
+      return buildExportConfig({
+        types: prodTypesValue,
+        import: 'esm' in builds ? esmExport : undefined,
+        require: 'cjs' in builds ? cjsExport : undefined,
+      });
     };
 
     // Generate exports
