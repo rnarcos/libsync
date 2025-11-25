@@ -1,5 +1,11 @@
 # libsync
 
+## 1.0.9
+
+### Patch Changes
+
+- [`38d5771`](https://github.com/rnarcos/libsync/commit/38d5771a15cf6bde862c8ac1dc906e86e11d9814) Thanks [@rnarcos](https://github.com/rnarcos)! - Enhanced error reporting across all CLI commands. Fatal errors now always display full stack traces, while non-fatal errors show brief descriptions with full details available in verbose mode. TypeScript compilation errors now display the actual compilation errors instead of just exit codes. All errors are properly logged and no longer silently suppressed.
+
 ## 1.0.8
 
 ### Patch Changes

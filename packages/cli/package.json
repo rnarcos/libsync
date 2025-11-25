@@ -2,7 +2,7 @@
   "private": false,
   "name": "libsync",
   "description": "A CLI tool for library maintainers using tsup - build, develop, and publish with ease",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "license": "MIT",
   "author": {
     "name": "Marcos Fernandes",
@@ -91,6 +91,11 @@
       "types": "./src/utils/config.js",
       "import": "./src/utils/config.js",
       "require": "./src/utils/config.js"
+    },
+    "./utils/error-logging": {
+      "types": "./src/utils/error-logging.js",
+      "import": "./src/utils/error-logging.js",
+      "require": "./src/utils/error-logging.js"
     },
     "./utils/input": {
       "types": "./src/utils/input.js",
