@@ -816,11 +816,23 @@ export async function publishStaging(options) {
           console.error(chalk.yellow(`   💡 ${suggestion}`));
         });
       }
+      // Log full error details for fatal errors
+      if (error instanceof Error && error.stack) {
+        console.error(chalk.gray('\n   Full error details:'));
+        console.error(chalk.gray(error.stack));
+      }
     } else {
+      // Unexpected errors are always fatal - log full details
       console.error(chalk.red('\n❌ Staging publish failed'));
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      console.error(chalk.gray(`   ${errorMessage}`));
+      if (error instanceof Error) {
+        console.error(chalk.red(`   ${error.message}`));
+        if (error.stack) {
+          console.error(chalk.gray('\n   Full error details:'));
+          console.error(chalk.gray(error.stack));
+        }
+      } else {
+        console.error(chalk.red(`   ${String(error)}`));
+      }
     }
 
     console.error(chalk.gray('\n💡 Troubleshooting:'));

@@ -155,19 +155,36 @@ export async function packageJsonCommand(options) {
           console.error(chalk.yellow(`   • ${suggestion}`));
         });
       }
+
+      // Fatal errors always show full details
+      if (error.stack) {
+        console.error(chalk.gray('\n   Full error details:'));
+        console.error(chalk.gray(error.stack));
+      }
     } else if (error instanceof PackageError) {
       console.error(chalk.red('\n❌ Package Error:'));
       console.error(chalk.red(`   ${error.message}`));
       if (error.packagePath) {
         console.error(chalk.gray(`   Package: ${error.packagePath}`));
       }
+
+      // Fatal errors always show full details
+      if (error.stack) {
+        console.error(chalk.gray('\n   Full error details:'));
+        console.error(chalk.gray(error.stack));
+      }
     } else {
+      // Unexpected errors are always fatal - log full details
       console.error(chalk.red('\n❌ Unexpected error:'));
-      console.error(
-        chalk.red(
-          `   ${error instanceof Error ? error.message : String(error)}`,
-        ),
-      );
+      if (error instanceof Error) {
+        console.error(chalk.red(`   ${error.message}`));
+        if (error.stack) {
+          console.error(chalk.gray('\n   Full error details:'));
+          console.error(chalk.gray(error.stack));
+        }
+      } else {
+        console.error(chalk.red(`   ${String(error)}`));
+      }
     }
 
     throw error; // Re-throw for proper CLI error handling

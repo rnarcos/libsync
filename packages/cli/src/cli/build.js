@@ -12,6 +12,7 @@ import fse from 'fs-extra';
 import { build } from 'tsup';
 
 import { getConfig, initConfig } from '../utils/config.js';
+import { logFatalError, logNonFatalError } from '../utils/error-logging.js';
 import {
   cleanBuild,
   getPackageBuilds,
@@ -156,7 +157,17 @@ export async function buildCommand(options) {
             '❌ Failed to update package.json types fields, reverting to dev mode...',
           ),
         );
-        writePackageJson(packagePath, 'development');
+        // Log the error before attempting recovery
+        logFatalError(finalError, 'Failed to update package.json types fields');
+        try {
+          writePackageJson(packagePath, 'development');
+        } catch (revertError) {
+          logNonFatalError(
+            revertError,
+            '⚠️  Failed to revert package.json to dev mode',
+            verbose,
+          );
+        }
         throw finalError;
       }
     } else {
@@ -212,7 +223,17 @@ export async function buildCommand(options) {
             '❌ Failed to finalize package.json, reverting to dev mode...',
           ),
         );
-        writePackageJson(packagePath, 'development');
+        // Log the error before attempting recovery
+        logFatalError(finalError, 'Failed to finalize package.json');
+        try {
+          writePackageJson(packagePath, 'development');
+        } catch (revertError) {
+          logNonFatalError(
+            revertError,
+            '⚠️  Failed to revert package.json to dev mode',
+            verbose,
+          );
+        }
         throw finalError;
       }
     }
@@ -232,8 +253,12 @@ export async function buildCommand(options) {
         chalk.yellow('🔄 Reverting package.json to development mode...'),
       );
       writePackageJson(packagePath, 'development');
-    } catch {
-      console.error(chalk.red('⚠️  Failed to revert package.json to dev mode'));
+    } catch (revertError) {
+      logNonFatalError(
+        revertError,
+        '⚠️  Failed to revert package.json to dev mode',
+        verbose,
+      );
     }
 
     if (error instanceof ConfigurationError) {
@@ -246,19 +271,36 @@ export async function buildCommand(options) {
           console.error(chalk.yellow(`   • ${suggestion}`));
         });
       }
+
+      // Fatal errors always show full details
+      if (error.stack) {
+        console.error(chalk.gray('\n   Full error details:'));
+        console.error(chalk.gray(error.stack));
+      }
     } else if (error instanceof PackageError) {
       console.error(chalk.red('\n❌ Package Error:'));
       console.error(chalk.red(`   ${error.message}`));
       if (error.packagePath) {
         console.error(chalk.gray(`   Package: ${error.packagePath}`));
       }
+
+      // Fatal errors always show full details
+      if (error.stack) {
+        console.error(chalk.gray('\n   Full error details:'));
+        console.error(chalk.gray(error.stack));
+      }
     } else {
+      // Unexpected errors are always fatal - log full details
       console.error(chalk.red('\n❌ Unexpected error:'));
-      console.error(
-        chalk.red(
-          `   ${error instanceof Error ? error.message : String(error)}`,
-        ),
-      );
+      if (error instanceof Error) {
+        console.error(chalk.red(`   ${error.message}`));
+        if (error.stack) {
+          console.error(chalk.gray('\n   Full error details:'));
+          console.error(chalk.gray(error.stack));
+        }
+      } else {
+        console.error(chalk.red(`   ${String(error)}`));
+      }
     }
 
     throw error; // Re-throw for proper CLI error handling
@@ -305,7 +347,8 @@ async function cleanExistingTypes(packagePath, builds, verbose) {
     try {
       await walk(dir);
     } catch (error) {
-      // Silently ignore errors
+      // Non-fatal: directory walk may fail if directory doesn't exist or is inaccessible
+      logNonFatalError(error, `Failed to walk directory: ${dir}`, verbose);
     }
 
     return files;
@@ -325,7 +368,12 @@ async function cleanExistingTypes(packagePath, builds, verbose) {
             );
           }
         } catch (error) {
-          // Silently ignore errors
+          // Non-fatal: file removal may fail if file is locked or doesn't exist
+          logNonFatalError(
+            error,
+            `Failed to remove: ${path.relative(packagePath, dtsFile)}`,
+            verbose,
+          );
         }
       }
 
@@ -416,21 +464,34 @@ async function runTypeScriptCompilation(
       console.log(chalk.gray(`   Running: tsc ${tscArgs.join(' ')}`));
     }
 
-    const { status: tscCommandStatus, error } = spawn.sync('tsc', tscArgs, {
+    const tscProcess = spawn.sync('tsc', tscArgs, {
       stdio: verbose ? 'inherit' : 'pipe',
       cwd: packagePath,
+      encoding: 'utf8',
     });
 
-    if (error) {
+    if (tscProcess.error) {
       throw new PackageError(
-        `Failed to run TypeScript compiler: ${error.message}`,
+        `Failed to run TypeScript compiler: ${tscProcess.error.message}`,
+        packagePath,
       );
     }
 
-    if (tscCommandStatus !== 0) {
-      throw new PackageError(
-        `TypeScript compilation failed with exit code ${tscCommandStatus}`,
-      );
+    if (tscProcess.status !== 0) {
+      // Capture TypeScript error output
+      const errorOutput =
+        tscProcess.stderr?.toString() || tscProcess.stdout?.toString() || '';
+      const errorMessage = errorOutput
+        ? `TypeScript compilation failed:\n${errorOutput}`
+        : `TypeScript compilation failed with exit code ${tscProcess.status}`;
+
+      // Always show TypeScript errors, even if not in verbose mode
+      if (!verbose && errorOutput) {
+        console.error(chalk.red('\n   TypeScript compilation errors:'));
+        console.error(chalk.red(errorOutput));
+      }
+
+      throw new PackageError(errorMessage.trim(), packagePath);
     }
 
     console.log(chalk.green(`   ✅ TypeScript compilation completed`));
