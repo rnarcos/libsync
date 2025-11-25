@@ -13,6 +13,7 @@
 /schemas
 /schemas/commands-config
 /utils/config
+/utils/error-logging
 /utils/input
 /utils/package
 /utils/patterns

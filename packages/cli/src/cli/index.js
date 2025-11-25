@@ -59,11 +59,11 @@ program
     } catch (error) {
       console.error(chalk.red('\n❌ Build failed:'));
 
+      // All CLI errors are fatal - always log full details
       if (error instanceof Error) {
         console.error(chalk.red(`   ${error.message}`));
-
-        if (globalOptions.verbose && error.stack) {
-          console.error(chalk.gray('\nStack trace:'));
+        if (error.stack) {
+          console.error(chalk.gray('\n   Full error details:'));
           console.error(chalk.gray(error.stack));
         }
       } else {
@@ -120,11 +120,11 @@ program
     } catch (error) {
       console.error(chalk.red('\n❌ Clean failed:'));
 
+      // All CLI errors are fatal - always log full details
       if (error instanceof Error) {
         console.error(chalk.red(`   ${error.message}`));
-
-        if (globalOptions.verbose && error.stack) {
-          console.error(chalk.gray('\nStack trace:'));
+        if (error.stack) {
+          console.error(chalk.gray('\n   Full error details:'));
           console.error(chalk.gray(error.stack));
         }
       } else {
@@ -333,11 +333,11 @@ program
     } catch (error) {
       console.error(chalk.red('\n❌ Staging setup failed:'));
 
+      // All CLI errors are fatal - always log full details
       if (error instanceof Error) {
         console.error(chalk.red(`   ${error.message}`));
-
-        if (globalOptions.verbose && error.stack) {
-          console.error(chalk.gray('\nStack trace:'));
+        if (error.stack) {
+          console.error(chalk.gray('\n   Full error details:'));
           console.error(chalk.gray(error.stack));
         }
       } else {
