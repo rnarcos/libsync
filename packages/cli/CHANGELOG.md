@@ -1,5 +1,11 @@
 # libsync
 
+## 1.0.8
+
+### Patch Changes
+
+- [`9a8dc06`](https://github.com/rnarcos/libsync/commit/9a8dc06d0871b6b644e07dbb4e3e593c4be0b908) Thanks [@rnarcos](https://github.com/rnarcos)! - Fixed field ordering in package.json exports when using `--types-only` flag. Export fields are now correctly ordered as `types`, `import`, `require` (instead of `import`, `require`, `types`), ensuring proper TypeScript resolution.
+
 ## 1.0.7
 
 ### Patch Changes
