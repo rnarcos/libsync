@@ -34,21 +34,6 @@
     "publish:staging": "turbo publish:staging",
     "typecheck": "turbo typecheck"
   },
-  "lint-staged": {
-    "*.+(ts|tsx|js)": [
-      "npx eslint --fix",
-      "npx prettier --write"
-    ],
-    "package.json": [
-      "npx npmPkgJsonLint"
-    ],
-    "(packages|recipes)/*/(src/**|package.json)": [
-      "npx libsync package-json --mode development"
-    ],
-    "configs/!(eslint-config|prettier-config)/(src/**|package.json)": [
-      "npx libsync package-json --mode development"
-    ]
-  },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.1",
     "@changesets/cli": "^2.29.7",
@@ -66,7 +51,7 @@
     "eslint-plugin-turbo": "^2.5.6",
     "husky": "^7.0.0",
     "libsync": "workspace:*",
-    "lint-staged": "^10.5.4",
+    "lint-staged": "^15.2.10",
     "markdownlint-cli": "^0.34.0",
     "npm-package-json-lint": "^7.0.0",
     "npm-package-json-lint-config-default": "^6.0.0",

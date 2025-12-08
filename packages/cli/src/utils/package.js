@@ -1195,6 +1195,38 @@ export function writePackageJson(
 
     const isProduction = mode === 'production';
     const isProductionTypes = mode === 'production-types';
+
+    // Validate production files exist when generating production package.json
+    if (isProduction) {
+      const missingFiles = [];
+      if ('cjs' in builds) {
+        const cjsExt = getActualFileExtension(
+          rootPath,
+          join(cjsDir, 'index'),
+          false,
+        );
+        if (!cjsExt) {
+          missingFiles.push(`CJS build file: ${join(cjsDir, 'index.*')}`);
+        }
+      }
+      if ('esm' in builds) {
+        const esmExt = getActualFileExtension(
+          rootPath,
+          join(esmDir, 'index'),
+          false,
+        );
+        if (!esmExt) {
+          missingFiles.push(`ESM build file: ${join(esmDir, 'index.*')}`);
+        }
+      }
+      if (missingFiles.length > 0) {
+        throw new PackageError(
+          `Production build files not found. Missing files:\n${missingFiles.map((f) => `  - ${f}`).join('\n')}\n\nRun 'libsync build' first to generate production files.`,
+          rootPath,
+        );
+      }
+    }
+
     const indexExtension = getIndexFileExtension(sourcePath, isProduction);
     // const buildKeys = Object.keys(builds); // Currently unused
 
@@ -1294,14 +1326,32 @@ export function writePackageJson(
       const esmExt =
         'esm' in builds
           ? getActualFileExtension(rootPath, join(esmDir, relativePath), false)
-          : '.js';
+          : null;
       const cjsExt =
         'cjs' in builds
           ? getActualFileExtension(rootPath, join(cjsDir, relativePath), false)
-          : '.cjs';
+          : null;
 
-      const esmExport = `./${join(esmDir, relativePath)}${esmExt}`;
-      const cjsExport = `./${join(cjsDir, relativePath)}${cjsExt}`;
+      // Throw error if production files don't exist
+      if ('esm' in builds && !esmExt) {
+        throw new PackageError(
+          `Production ESM file not found: ${join(esmDir, relativePath)}.*\nRun 'libsync build' first to generate production files.`,
+          rootPath,
+        );
+      }
+      if ('cjs' in builds && !cjsExt) {
+        throw new PackageError(
+          `Production CJS file not found: ${join(cjsDir, relativePath)}.*\nRun 'libsync build' first to generate production files.`,
+          rootPath,
+        );
+      }
+
+      const esmExport = esmExt
+        ? `./${join(esmDir, relativePath)}${esmExt}`
+        : undefined;
+      const cjsExport = cjsExt
+        ? `./${join(cjsDir, relativePath)}${cjsExt}`
+        : undefined;
 
       // Collect types value (only include if the .d.ts file actually exists)
       let prodTypesValue = undefined;
@@ -1356,6 +1406,12 @@ export function writePackageJson(
           join(cjsDir, 'index'),
           false,
         );
+        if (!cjsIndexExt) {
+          throw new PackageError(
+            `Production CJS file not found: ${join(cjsDir, 'index')}.*\nRun 'libsync build' first to generate production files.`,
+            rootPath,
+          );
+        }
         pkg.main = ensureRelativePath(join(cjsDir, `index${cjsIndexExt}`));
         // Only set types if the .d.ts file exists
         const devCjsTypesPath = findTypesFile(rootPath, join(cjsDir, 'index'));
@@ -1370,6 +1426,7 @@ export function writePackageJson(
           pkg.types = ensureRelativePath(prodTypesCjsPath);
         }
       } else {
+        // Development mode: always update to source paths
         pkg.main = ensureRelativePath(
           join(sourceDir, `index${indexExtension}`),
         );
@@ -1389,6 +1446,12 @@ export function writePackageJson(
           join(esmDir, 'index'),
           false,
         );
+        if (!esmIndexExt) {
+          throw new PackageError(
+            `Production ESM file not found: ${join(esmDir, 'index')}.*\nRun 'libsync build' first to generate production files.`,
+            rootPath,
+          );
+        }
         pkg.module = ensureRelativePath(join(esmDir, `index${esmIndexExt}`));
         // Only set types if the .d.ts file exists
         const devEsmTypesPath = findTypesFile(rootPath, join(esmDir, 'index'));
@@ -1403,6 +1466,7 @@ export function writePackageJson(
           pkg.types = ensureRelativePath(prodTypesEsmPath);
         }
       } else {
+        // Development mode: always update to source paths
         pkg.module = ensureRelativePath(
           join(sourceDir, `index${indexExtension}`),
         );
@@ -1420,6 +1484,7 @@ export function writePackageJson(
     }
 
     // Update exports (this is the key part - direct property mutation)
+    // Always regenerate exports based on target mode
     pkg.exports = {
       ...moduleExports,
       './package.json': './package.json',
@@ -1710,6 +1775,13 @@ export function cleanGitignore(rootPath) {
  * @param {boolean} isSource - Whether to look in source directory
  * @returns {string} The actual file extension (e.g., '.ts', '.js', '.mts')
  */
+/**
+ * Get the actual file extension for a given path
+ * @param {string} rootPath - Root path of the package
+ * @param {string} relativePath - Relative path without extension
+ * @param {boolean} isSource - Whether to look in source directory
+ * @returns {string | null} The actual file extension (e.g., '.ts', '.js', '.mts') or null if not found (production files only)
+ */
 function getActualFileExtension(rootPath, relativePath, isSource = true) {
   const config = getConfig();
   const baseDir = isSource ? getSourceDir() : '';
@@ -1733,7 +1805,9 @@ function getActualFileExtension(rootPath, relativePath, isSource = true) {
       return ext;
     }
   }
-  return '.js'; // fallback
+  // For source files, return fallback since source files should exist
+  // For production files, return null to indicate file not found (will throw error)
+  return isSource ? '.js' : null;
 }
 
 /**
@@ -1895,6 +1969,12 @@ function generateProxyPackageJson(
         join(moduleDir, path),
         false,
       );
+      if (!esmExt) {
+        throw new PackageError(
+          `Production ESM file not found for proxy: ${join(moduleDir, path)}.*\nRun 'libsync build' first to generate production files.`,
+          rootPath,
+        );
+      }
       proxyPkg.module = join(prefix, moduleDir, `${path}${esmExt}`);
       // Only include types if .d.ts exists and types should be generated
       const proxyModuleTypesPath = findTypesFile(
@@ -1912,6 +1992,12 @@ function generateProxyPackageJson(
         join(mainDir, path),
         false,
       );
+      if (!cjsExt) {
+        throw new PackageError(
+          `Production CJS file not found for proxy: ${join(mainDir, path)}.*\nRun 'libsync build' first to generate production files.`,
+          rootPath,
+        );
+      }
       proxyPkg.main = join(prefix, mainDir, `${path}${cjsExt}`);
       // Only include types if .d.ts exists and types should be generated
       const proxyMainTypesPath = findTypesFile(rootPath, join(mainDir, path));
@@ -1939,6 +2025,12 @@ function generateProxyPackageJson(
           join(mainDir, path),
           false,
         );
+        if (!cjsExt) {
+          throw new PackageError(
+            `Production CJS file not found for proxy: ${join(mainDir, path)}.*\nRun 'libsync build' first to generate production files.`,
+            rootPath,
+          );
+        }
         proxyPkg.main = join(prefix, mainDir, `${path}${cjsExt}`);
       }
       if ('esm' in builds) {
@@ -1947,6 +2039,12 @@ function generateProxyPackageJson(
           join(moduleDir, path),
           false,
         );
+        if (!esmExt) {
+          throw new PackageError(
+            `Production ESM file not found for proxy: ${join(moduleDir, path)}.*\nRun 'libsync build' first to generate production files.`,
+            rootPath,
+          );
+        }
         proxyPkg.module = join(prefix, moduleDir, `${path}${esmExt}`);
       }
     } else {
