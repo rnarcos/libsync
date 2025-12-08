@@ -33,13 +33,15 @@ const buildWorkspaceCommands =
     // Add workspace commands
     workspaceFiles.forEach((files, workspace) => {
       if (commandsSet.has('package-json')) {
-        result.push(`pnpm -F ${workspace} package-json --mode development`);
+        result.push(
+          `pnpm -C ${workspace} exec libsync package-json --mode development`,
+        );
       }
       if (commandsSet.has('lint')) {
-        result.push(`pnpm -F ${workspace} lint`);
+        result.push(`pnpm -C ${workspace} lint`);
       }
       if (commandsSet.has('format')) {
-        result.push(`pnpm -F ${workspace} format`);
+        result.push(`pnpm -C ${workspace} format`);
       }
     });
 
