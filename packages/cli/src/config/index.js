@@ -22,6 +22,7 @@ export const libsyncConfigSchema = z
     // TypeScript configuration
     typescript: z
       .object({
+        runner: z.enum(['tsc', 'tsgo']).default('tsc'),
         configFile: z.string().default('tsconfig.json'),
         buildConfigFile: z.string().default('tsconfig.build.json'),
         buildCacheFile: z.string().default('.cache/tsbuildinfo.json'),

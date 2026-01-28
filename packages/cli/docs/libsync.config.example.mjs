@@ -17,9 +17,14 @@ export default {
 
   // TypeScript configuration (all optional)
   typescript: {
+    // TypeScript compiler to use: 'tsc' (default, stable) or 'tsgo' (experimental, faster)
+    // tsgo is TypeScript 7 written in Go - preview quality, some edge cases don't work
+    // Install tsgo: npm install -g @typescript/native-preview
+    runner: 'tsc',
+
     configFile: 'tsconfig.json', // Main TypeScript config
     buildConfigFile: 'tsconfig.build.json', // Build-specific config
-    buildCacheFile: '.cache/tsbuildinfo.json', // tsc build cache
+    buildCacheFile: '.cache/tsbuildinfo.json', // Build cache file
   },
 
   // File patterns (all optional)
