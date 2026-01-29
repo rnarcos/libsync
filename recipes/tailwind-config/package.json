@@ -14,9 +14,9 @@
     "directory": "recipes/tailwind-config"
   },
   "type": "module",
-  "main": "./src/index.js",
-  "module": "./src/index.js",
-  "types": "./src/index.js",
+  "main": "./cjs/index.cjs",
+  "module": "./esm/index.js",
+  "types": "./esm/index.d.ts",
   "scripts": {
     "build": "libsync build",
     "clean": "libsync clean",
@@ -46,19 +46,19 @@
   },
   "exports": {
     "./base": {
-      "types": "./src/base.js",
-      "import": "./src/base.js",
-      "require": "./src/base.js"
+      "types": "./esm/base.d.ts",
+      "import": "./esm/base.js",
+      "require": "./cjs/base.cjs"
     },
     ".": {
-      "types": "./src/index.js",
-      "import": "./src/index.js",
-      "require": "./src/index.js"
+      "types": "./esm/index.d.ts",
+      "import": "./esm/index.js",
+      "require": "./cjs/index.cjs"
     },
     "./native": {
-      "types": "./src/native.js",
-      "import": "./src/native.js",
-      "require": "./src/native.js"
+      "types": "./esm/native.d.ts",
+      "import": "./esm/native.js",
+      "require": "./cjs/native.cjs"
     },
     "./package.json": "./package.json"
   }

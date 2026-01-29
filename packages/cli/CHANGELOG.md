@@ -1,5 +1,27 @@
 # libsync
 
+## 1.0.11
+
+### Patch Changes
+
+- [`1dc8c83`](https://github.com/rnarcos/libsync/commit/1dc8c83aa1ed34717b1ec9beb290b15fff588759) Thanks [@rnarcos](https://github.com/rnarcos)! - Add support for tsgo (TypeScript 7) as an alternative compiler:
+  - **New configuration option**: Added `typescript.runner` field to `libsync.config.mjs` with options `'tsc'` (default) or `'tsgo'` (experimental)
+  - **Backward compatible**: Default behavior remains unchanged, using the stable `tsc` compiler
+  - **Enhanced error handling**: Clear error messages when `tsgo` is selected but not installed, with installation instructions
+  - **Performance potential**: Users can opt-in to Microsoft's faster Go-based TypeScript compiler for declaration generation
+
+  Example configuration:
+
+  ```javascript
+  export default {
+    typescript: {
+      runner: 'tsgo', // Use experimental tsgo instead of tsc
+    },
+  };
+  ```
+
+  Note: tsgo is experimental preview software. Install with `npm install -g @typescript/native-preview`. Some edge cases in declaration emit may not work yet.
+
 ## 1.0.10
 
 ### Patch Changes
