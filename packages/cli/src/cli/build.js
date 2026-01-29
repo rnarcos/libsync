@@ -448,6 +448,9 @@ async function runTypeScriptCompilation(
     }
 
     // Run TypeScript compiler
+    const runner = config?.typescript?.runner || 'tsc';
+    const runnerName = runner === 'tsgo' ? 'tsgo' : 'tsc';
+
     const tscArgs = [
       '--project',
       buildTSConfigPath,
@@ -461,16 +464,28 @@ async function runTypeScriptCompilation(
     ];
 
     if (verbose) {
-      console.log(chalk.gray(`   Running: tsc ${tscArgs.join(' ')}`));
+      console.log(chalk.gray(`   Running: ${runnerName} ${tscArgs.join(' ')}`));
     }
 
-    const tscProcess = spawn.sync('tsc', tscArgs, {
+    const tscProcess = spawn.sync(runnerName, tscArgs, {
       stdio: verbose ? 'inherit' : 'pipe',
       cwd: packagePath,
       encoding: 'utf8',
     });
 
     if (tscProcess.error) {
+      // Enhanced error message for tsgo
+      if (
+        runner === 'tsgo' &&
+        'code' in tscProcess.error &&
+        tscProcess.error.code === 'ENOENT'
+      ) {
+        throw new PackageError(
+          `TypeScript runner 'tsgo' not found. Install with: npm install -g @typescript/native-preview\n` +
+            `Or switch to 'tsc' in your libsync.config.mjs`,
+          packagePath,
+        );
+      }
       throw new PackageError(
         `Failed to run TypeScript compiler: ${tscProcess.error.message}`,
         packagePath,
