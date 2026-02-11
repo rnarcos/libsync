@@ -1,5 +1,11 @@
 # libsync
 
+## 1.0.12
+
+### Patch Changes
+
+- [`20f818d`](https://github.com/rnarcos/libsync/commit/20f818d284903cfb5b5a5a3e7cbea47bd2c3c932) Thanks [@rnarcos](https://github.com/rnarcos)! - Fixing support for Windows file paths.
+
 ## 1.0.11
 
 ### Patch Changes
