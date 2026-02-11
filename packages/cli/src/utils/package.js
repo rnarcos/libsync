@@ -1245,7 +1245,7 @@ export function writePackageJson(
       if (!isProduction && !isProductionTypes) {
         // Development mode: formats point to source file with original extension
         const originalExtension = path.match(/\.[^.]+$/)?.[0] || '.js';
-        const sourceExport = `./${join(sourceDir, relativePath)}${originalExtension}`;
+        const sourceExport = `./${normalizePath(join(sourceDir, relativePath))}${originalExtension}`;
 
         // Build export config with proper field ordering: types, import, require
         return buildExportConfig({
@@ -1282,7 +1282,7 @@ export function writePackageJson(
         } else {
           // No existing exports - default to source (current behavior)
           const originalExtension = path.match(/\.[^.]+$/)?.[0] || '.js';
-          const sourceExport = `./${join(sourceDir, relativePath)}${originalExtension}`;
+          const sourceExport = `./${normalizePath(join(sourceDir, relativePath))}${originalExtension}`;
           if ('esm' in builds) {
             importValue = sourceExport;
           }
@@ -1299,17 +1299,17 @@ export function writePackageJson(
           if ('esm' in builds) {
             exportTypesPath = findTypesFile(
               rootPath,
-              join(esmDir, relativePath),
+              normalizePath(join(esmDir, relativePath)),
             );
           }
           if (!exportTypesPath && 'cjs' in builds) {
             exportTypesPath = findTypesFile(
               rootPath,
-              join(cjsDir, relativePath),
+              normalizePath(join(cjsDir, relativePath)),
             );
           }
           if (exportTypesPath) {
-            typesValue = `./${exportTypesPath}`;
+            typesValue = `./${normalizePath(exportTypesPath)}`;
           }
         }
 
@@ -1325,11 +1325,19 @@ export function writePackageJson(
       // Detect actual file extensions from build output
       const esmExt =
         'esm' in builds
-          ? getActualFileExtension(rootPath, join(esmDir, relativePath), false)
+          ? getActualFileExtension(
+              rootPath,
+              normalizePath(join(esmDir, relativePath)),
+              false,
+            )
           : null;
       const cjsExt =
         'cjs' in builds
-          ? getActualFileExtension(rootPath, join(cjsDir, relativePath), false)
+          ? getActualFileExtension(
+              rootPath,
+              normalizePath(join(cjsDir, relativePath)),
+              false,
+            )
           : null;
 
       // Throw error if production files don't exist
@@ -1347,10 +1355,10 @@ export function writePackageJson(
       }
 
       const esmExport = esmExt
-        ? `./${join(esmDir, relativePath)}${esmExt}`
+        ? `./${normalizePath(join(esmDir, relativePath))}${esmExt}`
         : undefined;
       const cjsExport = cjsExt
-        ? `./${join(cjsDir, relativePath)}${cjsExt}`
+        ? `./${normalizePath(join(cjsDir, relativePath))}${cjsExt}`
         : undefined;
 
       // Collect types value (only include if the .d.ts file actually exists)
@@ -1361,17 +1369,17 @@ export function writePackageJson(
         if ('esm' in builds) {
           prodExportTypesPath = findTypesFile(
             rootPath,
-            join(esmDir, relativePath),
+            normalizePath(join(esmDir, relativePath)),
           );
         }
         if (!prodExportTypesPath && 'cjs' in builds) {
           prodExportTypesPath = findTypesFile(
             rootPath,
-            join(cjsDir, relativePath),
+            normalizePath(join(cjsDir, relativePath)),
           );
         }
         if (prodExportTypesPath) {
-          prodTypesValue = `./${prodExportTypesPath}`;
+          prodTypesValue = `./${normalizePath(prodExportTypesPath)}`;
         }
       }
 
@@ -1428,11 +1436,11 @@ export function writePackageJson(
       } else {
         // Development mode: always update to source paths
         pkg.main = ensureRelativePath(
-          join(sourceDir, `index${indexExtension}`),
+          normalizePath(join(sourceDir, `index${indexExtension}`)),
         );
         if (shouldIncludeTypes) {
           pkg.types = ensureRelativePath(
-            join(sourceDir, `index${indexExtension}`),
+            normalizePath(join(sourceDir, `index${indexExtension}`)),
           );
         }
       }
@@ -1468,11 +1476,11 @@ export function writePackageJson(
       } else {
         // Development mode: always update to source paths
         pkg.module = ensureRelativePath(
-          join(sourceDir, `index${indexExtension}`),
+          normalizePath(join(sourceDir, `index${indexExtension}`)),
         );
         if (shouldIncludeTypes) {
           pkg.types = ensureRelativePath(
-            join(sourceDir, `index${indexExtension}`),
+            normalizePath(join(sourceDir, `index${indexExtension}`)),
           );
         }
       }
@@ -1975,14 +1983,16 @@ function generateProxyPackageJson(
           rootPath,
         );
       }
-      proxyPkg.module = join(prefix, moduleDir, `${path}${esmExt}`);
+      proxyPkg.module = normalizePath(
+        join(prefix, moduleDir, `${path}${esmExt}`),
+      );
       // Only include types if .d.ts exists and types should be generated
       const proxyModuleTypesPath = findTypesFile(
         rootPath,
-        join(moduleDir, path),
+        normalizePath(join(moduleDir, path)),
       );
       if (shouldIncludeTypes && proxyModuleTypesPath) {
-        proxyPkg.types = join(prefix, proxyModuleTypesPath);
+        proxyPkg.types = normalizePath(join(prefix, proxyModuleTypesPath));
       }
     }
 
@@ -1998,11 +2008,14 @@ function generateProxyPackageJson(
           rootPath,
         );
       }
-      proxyPkg.main = join(prefix, mainDir, `${path}${cjsExt}`);
+      proxyPkg.main = normalizePath(join(prefix, mainDir, `${path}${cjsExt}`));
       // Only include types if .d.ts exists and types should be generated
-      const proxyMainTypesPath = findTypesFile(rootPath, join(mainDir, path));
+      const proxyMainTypesPath = findTypesFile(
+        rootPath,
+        normalizePath(join(mainDir, path)),
+      );
       if (shouldIncludeTypes && proxyMainTypesPath) {
-        proxyPkg.types = join(prefix, proxyMainTypesPath);
+        proxyPkg.types = normalizePath(join(prefix, proxyMainTypesPath));
       }
     }
   } else if (isProductionTypes) {
@@ -2031,7 +2044,9 @@ function generateProxyPackageJson(
             rootPath,
           );
         }
-        proxyPkg.main = join(prefix, mainDir, `${path}${cjsExt}`);
+        proxyPkg.main = normalizePath(
+          join(prefix, mainDir, `${path}${cjsExt}`),
+        );
       }
       if ('esm' in builds) {
         const esmExt = getActualFileExtension(
@@ -2045,12 +2060,16 @@ function generateProxyPackageJson(
             rootPath,
           );
         }
-        proxyPkg.module = join(prefix, moduleDir, `${path}${esmExt}`);
+        proxyPkg.module = normalizePath(
+          join(prefix, moduleDir, `${path}${esmExt}`),
+        );
       }
     } else {
       // Use development paths (mirror root)
       const srcExt = getActualFileExtension(rootPath, path, true);
-      const srcPath = join(prefix, sourceDir, `${path}${srcExt}`);
+      const srcPath = normalizePath(
+        join(prefix, sourceDir, `${path}${srcExt}`),
+      );
       if ('cjs' in builds) {
         proxyPkg.main = srcPath;
       }
@@ -2064,19 +2083,25 @@ function generateProxyPackageJson(
       // ESM types take precedence over CJS types
       let proxyProdTypesPath = null;
       if ('esm' in builds) {
-        proxyProdTypesPath = findTypesFile(rootPath, join(moduleDir, path));
+        proxyProdTypesPath = findTypesFile(
+          rootPath,
+          normalizePath(join(moduleDir, path)),
+        );
       }
       if (!proxyProdTypesPath && 'cjs' in builds) {
-        proxyProdTypesPath = findTypesFile(rootPath, join(mainDir, path));
+        proxyProdTypesPath = findTypesFile(
+          rootPath,
+          normalizePath(join(mainDir, path)),
+        );
       }
       if (proxyProdTypesPath) {
-        proxyPkg.types = join(prefix, proxyProdTypesPath);
+        proxyPkg.types = normalizePath(join(prefix, proxyProdTypesPath));
       }
     }
   } else {
     // Dev mode - point to source files with actual extensions
     const srcExt = getActualFileExtension(rootPath, path, true);
-    const srcPath = join(prefix, sourceDir, `${path}${srcExt}`);
+    const srcPath = normalizePath(join(prefix, sourceDir, `${path}${srcExt}`));
     proxyPkg.main = srcPath;
     proxyPkg.module = srcPath;
     // Only set types in dev mode if types should be generated
