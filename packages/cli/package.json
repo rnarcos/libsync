@@ -33,6 +33,7 @@
     "typecheck": "node src/cli/index.js build --types-only"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "chalk": "^4.1.2",
     "chokidar": "^3.5.3",
     "commander": "^12.0.0",

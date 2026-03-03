@@ -261,22 +261,20 @@ export function validateBuildConfig(packagePath) {
 
   // Validate CJS directory if enabled
   if (formats.cjs !== false) {
-    const cjsDir =
+    const _cjsDir =
       typeof formats.cjs === 'string'
         ? formats.cjs
         : config?.directories?.cjs || 'cjs';
-    const cjsPath = join(packagePath, cjsDir);
     // Only warn during build if the directory will be created
     // This is informational, not an error
   }
 
   // Validate ESM directory if enabled
   if (formats.esm !== false) {
-    const esmDir =
+    const _esmDir =
       typeof formats.esm === 'string'
         ? formats.esm
         : config?.directories?.esm || 'esm';
-    const esmPath = join(packagePath, esmDir);
     // Only warn during build if the directory will be created
     // This is informational, not an error
   }
