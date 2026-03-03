@@ -1236,7 +1236,10 @@ export function writePackageJson(
      * @returns {Record<string, string>} Export configuration
      */
     const getExports = (path) => {
-      const relativePath = removeExt(path).replace(sourcePath, '');
+      const relativePath = removeExt(path).replace(
+        normalizePath(sourcePath),
+        '',
+      );
       const exportConfig = /** @type {Record<string, string>} */ ({});
 
       // Types field will be present based on config
