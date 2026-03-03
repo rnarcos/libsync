@@ -14,8 +14,8 @@
     "directory": "recipes/react-core"
   },
   "type": "module",
-  "main": "./src/index.ts",
-  "module": "./src/index.ts",
+  "main": "./cjs/index.cjs",
+  "module": "./esm/index.js",
   "types": "./esm/index.d.ts",
   "scripts": {
     "build": "libsync build",
@@ -71,48 +71,48 @@
   "exports": {
     "./components/button/button.component": {
       "types": "./esm/components/button/button.component.d.ts",
-      "import": "./src/components/button/button.component.tsx",
-      "require": "./src/components/button/button.component.tsx"
+      "import": "./esm/components/button/button.component.js",
+      "require": "./cjs/components/button/button.component.cjs"
     },
     "./components/button/button.data": {
       "types": "./esm/components/button/button.data.d.ts",
-      "import": "./src/components/button/button.data.ts",
-      "require": "./src/components/button/button.data.ts"
+      "import": "./esm/components/button/button.data.js",
+      "require": "./cjs/components/button/button.data.cjs"
     },
     "./components/button/button.props": {
       "types": "./esm/components/button/button.props.d.ts",
-      "import": "./src/components/button/button.props.ts",
-      "require": "./src/components/button/button.props.ts"
+      "import": "./esm/components/button/button.props.js",
+      "require": "./cjs/components/button/button.props.cjs"
     },
     "./components/button": {
       "types": "./esm/components/button/index.d.ts",
-      "import": "./src/components/button/index.ts",
-      "require": "./src/components/button/index.ts"
+      "import": "./esm/components/button/index.js",
+      "require": "./cjs/components/button/index.cjs"
     },
     "./components": {
       "types": "./esm/components/index.d.ts",
-      "import": "./src/components/index.ts",
-      "require": "./src/components/index.ts"
+      "import": "./esm/components/index.js",
+      "require": "./cjs/components/index.cjs"
     },
     ".": {
       "types": "./esm/index.d.ts",
-      "import": "./src/index.ts",
-      "require": "./src/index.ts"
+      "import": "./esm/index.js",
+      "require": "./cjs/index.cjs"
     },
     "./utils/ui/cn": {
       "types": "./esm/utils/ui/cn/index.d.ts",
-      "import": "./src/utils/ui/cn/index.ts",
-      "require": "./src/utils/ui/cn/index.ts"
+      "import": "./esm/utils/ui/cn/index.js",
+      "require": "./cjs/utils/ui/cn/index.cjs"
     },
     "./utils/ui": {
       "types": "./esm/utils/ui/index.d.ts",
-      "import": "./src/utils/ui/index.ts",
-      "require": "./src/utils/ui/index.ts"
+      "import": "./esm/utils/ui/index.js",
+      "require": "./cjs/utils/ui/index.cjs"
     },
     "./utils": {
       "types": "./esm/utils/index.d.ts",
-      "import": "./src/utils/index.ts",
-      "require": "./src/utils/index.ts"
+      "import": "./esm/utils/index.js",
+      "require": "./cjs/utils/index.cjs"
     },
     "./package.json": "./package.json"
   }
