@@ -76,17 +76,6 @@ export function removeExt(path) {
 }
 
 /**
- * Check if a .d.ts file exists for a given path
- * @param {string} rootPath - Root path of the package
- * @param {string} relativePath - Relative path without extension (e.g., "esm/index")
- * @returns {boolean} Whether the .d.ts file exists
- */
-function hasTypesFile(rootPath, relativePath) {
-  const typesPath = join(rootPath, `${relativePath}.d.ts`);
-  return existsSync(typesPath);
-}
-
-/**
  * Find the actual types file path, accounting for possible src/ nesting
  * TypeScript may output to outDir/ or outDir/src/ depending on project structure
  * @param {string} rootPath - Root path
@@ -1240,7 +1229,7 @@ export function writePackageJson(
         normalizePath(sourcePath),
         '',
       );
-      const exportConfig = /** @type {Record<string, string>} */ ({});
+      const _exportConfig = /** @type {Record<string, string>} */ ({});
 
       // Types field will be present based on config
       const willHaveTypesField = shouldIncludeTypes;
