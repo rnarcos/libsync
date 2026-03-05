@@ -1412,18 +1412,20 @@ export function writePackageJson(
             rootPath,
           );
         }
-        pkg.main = ensureRelativePath(join(cjsDir, `index${cjsIndexExt}`));
+        pkg.main = ensureRelativePath(
+          normalizePath(join(cjsDir, `index${cjsIndexExt}`)),
+        );
         // Only set types if the .d.ts file exists
         const devCjsTypesPath = findTypesFile(rootPath, join(cjsDir, 'index'));
         if (shouldIncludeTypes && devCjsTypesPath) {
-          pkg.types = ensureRelativePath(devCjsTypesPath);
+          pkg.types = ensureRelativePath(normalizePath(devCjsTypesPath));
         }
       } else if (isProductionTypes) {
         // Production-types mode: preserve existing main, only update types
         // Don't overwrite main - keep whatever was there before
         const prodTypesCjsPath = findTypesFile(rootPath, join(cjsDir, 'index'));
         if (shouldIncludeTypes && prodTypesCjsPath) {
-          pkg.types = ensureRelativePath(prodTypesCjsPath);
+          pkg.types = ensureRelativePath(normalizePath(prodTypesCjsPath));
         }
       } else {
         // Development mode: always update to source paths
@@ -1452,18 +1454,20 @@ export function writePackageJson(
             rootPath,
           );
         }
-        pkg.module = ensureRelativePath(join(esmDir, `index${esmIndexExt}`));
+        pkg.module = ensureRelativePath(
+          normalizePath(join(esmDir, `index${esmIndexExt}`)),
+        );
         // Only set types if the .d.ts file exists
         const devEsmTypesPath = findTypesFile(rootPath, join(esmDir, 'index'));
         if (shouldIncludeTypes && devEsmTypesPath) {
-          pkg.types = ensureRelativePath(devEsmTypesPath);
+          pkg.types = ensureRelativePath(normalizePath(devEsmTypesPath));
         }
       } else if (isProductionTypes) {
         // Production-types mode: preserve existing module, only update types
         // Don't overwrite module - keep whatever was there before
         const prodTypesEsmPath = findTypesFile(rootPath, join(esmDir, 'index'));
         if (shouldIncludeTypes && prodTypesEsmPath) {
-          pkg.types = ensureRelativePath(prodTypesEsmPath);
+          pkg.types = ensureRelativePath(normalizePath(prodTypesEsmPath));
         }
       } else {
         // Development mode: always update to source paths
