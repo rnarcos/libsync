@@ -10,9 +10,9 @@
     "directory": "configs/typescript-config"
   },
   "type": "module",
-  "main": "./src/index.js",
-  "module": "./src/index.js",
-  "types": "./src/index.js",
+  "main": "./cjs/index.cjs",
+  "module": "./esm/index.js",
+  "types": "./esm/index.d.ts",
   "scripts": {
     "build": "libsync build",
     "clean": "libsync clean",
@@ -29,24 +29,21 @@
   },
   "exports": {
     ".": {
-      "types": "./src/index.js",
-      "import": "./src/index.js",
-      "require": "./src/index.js"
+      "types": "./esm/index.d.ts",
+      "import": "./esm/index.js",
+      "require": "./cjs/index.cjs"
     },
     "./js": {
-      "types": "./src/js.json",
-      "import": "./src/js.json",
-      "require": "./src/js.json"
+      "import": "./esm/js.json",
+      "require": "./cjs/js.json"
     },
     "./react": {
-      "types": "./src/react.json",
-      "import": "./src/react.json",
-      "require": "./src/react.json"
+      "import": "./esm/react.json",
+      "require": "./cjs/react.json"
     },
     "./root": {
-      "types": "./src/root.json",
-      "import": "./src/root.json",
-      "require": "./src/root.json"
+      "import": "./esm/root.json",
+      "require": "./cjs/root.json"
     },
     "./package.json": "./package.json"
   }
