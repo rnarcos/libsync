@@ -68,6 +68,19 @@ export const libsyncConfigSchema = z
                 cjs: z.union([z.literal(false), z.string()]).default('cjs'),
                 esm: z.union([z.literal(false), z.string()]).default('esm'),
                 types: z.boolean().default(true),
+                /**
+                 * Declarative bin entries: command name, path under source dir, and output format.
+                 * When non-empty, libsync overwrites package.json `bin` from this config.
+                 */
+                bin: z
+                  .array(
+                    z.object({
+                      command: z.string().min(1),
+                      path: z.string().min(1),
+                      format: z.enum(['cjs', 'esm']),
+                    }),
+                  )
+                  .optional(),
               })
               .default({}),
             // Tsup configuration can be:

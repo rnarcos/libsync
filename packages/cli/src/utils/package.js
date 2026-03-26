@@ -10,7 +10,7 @@ import {
   readdirSync,
   writeFileSync,
 } from 'fs';
-import { join, resolve, dirname, sep } from 'path';
+import { join, resolve, dirname, sep, relative } from 'path';
 
 import chalk from 'chalk';
 import fse from 'fs-extra';
@@ -288,6 +288,9 @@ export function isBinaryPackage(rootPath) {
  */
 export function isPureCLIPackage(rootPath) {
   try {
+    if (hasFormatsBinCommands(rootPath)) {
+      return false;
+    }
     const pkg = readPackageJson(rootPath);
     // Pure CLI: has bin but no main/module fields
     return typeof pkg.bin !== 'undefined' && !pkg.main && !pkg.module;
@@ -432,6 +435,202 @@ export function getPackageBuilds(rootPath) {
       `Failed to determine build configuration: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
+}
+
+/**
+ * Raw `formats.bin` entries from config (after initConfig).
+ * @returns {Array<{ command: string, path: string, format: 'cjs' | 'esm' }>}
+ */
+export function getFormatsBinRaw() {
+  const config = getConfig();
+  const bin = config?.commands?.build?.formats?.bin;
+  return Array.isArray(bin) ? bin : [];
+}
+
+/**
+ * Whether libsync should generate `package.json` bin solely from `commands.build.formats.bin`.
+ * @param {string} _rootPath - Package root (reserved for future use)
+ * @returns {boolean}
+ */
+export function hasFormatsBinCommands(_rootPath) {
+  return getFormatsBinRaw().length > 0;
+}
+
+/**
+ * Resolve a path under the source directory to an absolute file path.
+ * @param {string} rootPath - Package root
+ * @param {string} pathSpec - Path relative to source dir (e.g. `cli/index.js`)
+ * @returns {{ absolutePath: string, tsupKey: string }}
+ */
+function resolveFormatsBinSourceFile(rootPath, pathSpec) {
+  const sourceDir = getSourceDir();
+  const trimmed = pathSpec
+    .replace(/^\.?\//, '')
+    .replace(new RegExp(`^${sourceDir}/`), '');
+  const withoutExt = removeExt(trimmed);
+  const ext = getActualFileExtension(rootPath, withoutExt, true);
+  const absolutePath = normalizePath(
+    join(rootPath, sourceDir, `${withoutExt}${ext}`),
+  );
+  if (!existsSync(absolutePath)) {
+    throw new ConfigurationError(
+      `formats.bin: source file not found for path "${pathSpec}" (resolved: ${absolutePath})`,
+      [
+        `Ensure the file exists under ${sourceDir}/`,
+        'Use a path relative to the source directory, e.g. cli/index.js',
+      ],
+    );
+  }
+  return { absolutePath, tsupKey: withoutExt };
+}
+
+/**
+ * Validate and resolve all `formats.bin` entries.
+ * @param {string} rootPath - Package root
+ * @returns {Array<{ command: string, path: string, format: 'cjs'|'esm', absolutePath: string, tsupKey: string }>}
+ */
+export function resolveFormatsBinEntries(rootPath) {
+  const raw = getFormatsBinRaw();
+  if (raw.length === 0) {
+    return [];
+  }
+
+  const builds = getPackageBuilds(rootPath);
+  const seenCommands = new Set();
+  /** @type {Array<{ command: string, path: string, format: 'cjs'|'esm', absolutePath: string, tsupKey: string }>} */
+  const resolved = [];
+
+  for (const entry of raw) {
+    if (seenCommands.has(entry.command)) {
+      throw new ConfigurationError(
+        `Duplicate command in formats.bin: "${entry.command}"`,
+        ['Use a unique command name for each bin entry'],
+      );
+    }
+    seenCommands.add(entry.command);
+
+    if (entry.format === 'cjs' && !('cjs' in builds)) {
+      throw new ConfigurationError(
+        `formats.bin entry "${entry.command}" uses format "cjs" but CJS output is disabled (formats.cjs: false)`,
+        ['Enable commands.build.formats.cjs or change the entry format'],
+      );
+    }
+    if (entry.format === 'esm' && !('esm' in builds)) {
+      throw new ConfigurationError(
+        `formats.bin entry "${entry.command}" uses format "esm" but ESM output is disabled (formats.esm: false)`,
+        ['Enable commands.build.formats.esm or change the entry format'],
+      );
+    }
+
+    const { absolutePath, tsupKey } = resolveFormatsBinSourceFile(
+      rootPath,
+      entry.path,
+    );
+    resolved.push({
+      command: entry.command,
+      path: entry.path,
+      format: entry.format,
+      absolutePath,
+      tsupKey,
+    });
+  }
+
+  return resolved;
+}
+
+/**
+ * Validate `formats.bin` configuration (paths, formats, duplicate commands).
+ * @param {string} rootPath - Package root
+ */
+export function validateFormatsBin(rootPath) {
+  resolveFormatsBinEntries(rootPath);
+}
+
+/**
+ * Build package.json `bin` field from `formats.bin` for the given mode.
+ * @param {string} rootPath - Package root
+ * @param {string} mode - development | production | production-types
+ * @returns {Record<string, string>}
+ */
+function buildBinFieldFromFormatsBin(rootPath, mode) {
+  const entries = resolveFormatsBinEntries(rootPath);
+  const cjsDir = getCJSDir();
+  const esmDir = getESMDir();
+  const useProductionPaths =
+    mode === 'production' || mode === 'production-types';
+  /** @type {Record<string, string>} */
+  const out = {};
+
+  for (const e of entries) {
+    if (!useProductionPaths) {
+      out[e.command] = ensureRelativePath(
+        `./${normalizePath(relative(rootPath, e.absolutePath))}`,
+      );
+    } else {
+      const relPath = e.tsupKey;
+      if (e.format === 'cjs') {
+        const outPath = `./${join(cjsDir, `${relPath}.cjs`)}`;
+        out[e.command] = ensureRelativePath(normalizePath(outPath));
+      } else {
+        const outPath = `./${join(esmDir, `${relPath}.js`)}`;
+        out[e.command] = ensureRelativePath(normalizePath(outPath));
+      }
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Build tsup `entry` map for one format (cjs | esm).
+ * Excludes bin-only files that target the other format; keeps library files in all runs.
+ * @param {string} rootPath - Package root
+ * @param {string} sourcePath - Absolute path to source directory
+ * @param {'cjs'|'esm'} format - Current tsup format
+ * @returns {Record<string, string>}
+ */
+export function getTsupEntryForFormat(rootPath, sourcePath, format) {
+  const allEntries = getAllBuildFiles(sourcePath);
+  if (!hasFormatsBinCommands(rootPath)) {
+    return allEntries;
+  }
+
+  const publicFiles = getPublicFiles(sourcePath);
+  const publicPaths = new Set(
+    Object.values(publicFiles).map((p) => resolve(p)),
+  );
+
+  const resolvedBins = resolveFormatsBinEntries(rootPath);
+  /** @type {Map<string, Set<'cjs'|'esm'>>} */
+  const binFormatsByAbs = new Map();
+  for (const b of resolvedBins) {
+    const key = resolve(b.absolutePath);
+    if (!binFormatsByAbs.has(key)) {
+      binFormatsByAbs.set(key, new Set());
+    }
+    binFormatsByAbs.get(key)?.add(b.format);
+  }
+
+  /** @type {Record<string, string>} */
+  const result = {};
+  for (const [key, absPath] of Object.entries(allEntries)) {
+    const resolvedPath = resolve(absPath);
+    const inPublic = publicPaths.has(resolvedPath);
+    const binFormats = binFormatsByAbs.get(resolvedPath);
+
+    if (inPublic) {
+      result[key] = absPath;
+      continue;
+    }
+    if (binFormats && binFormats.size > 0) {
+      if (binFormats.has(format)) {
+        result[key] = absPath;
+      }
+      continue;
+    }
+    result[key] = absPath;
+  }
+  return result;
 }
 
 // Standard directory names
@@ -1138,8 +1337,9 @@ export function getPackageJson(rootPath, mode = 'development') {
     './package.json': './package.json',
   };
 
-  // Convert bin paths to appropriate format (dev/prod)
-  if (pkg.bin) {
+  if (hasFormatsBinCommands(rootPath)) {
+    pkg.bin = buildBinFieldFromFormatsBin(rootPath, mode);
+  } else if (pkg.bin) {
     pkg.bin = convertBinPaths(pkg.bin, mode, builds, rootPath);
   }
 
@@ -1482,8 +1682,9 @@ export function writePackageJson(
       }
     }
 
-    // Convert bin paths to appropriate format (dev/prod)
-    if (pkg.bin) {
+    if (hasFormatsBinCommands(rootPath)) {
+      pkg.bin = buildBinFieldFromFormatsBin(rootPath, mode);
+    } else if (pkg.bin) {
       pkg.bin = convertBinPaths(pkg.bin, mode, builds, rootPath);
     }
 
