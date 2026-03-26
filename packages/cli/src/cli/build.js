@@ -18,8 +18,10 @@ import {
   getPackageBuilds,
   getAllBuildFiles,
   getSourcePath,
+  getTsupEntryForFormat,
   isBinaryPackage,
   shouldGenerateTypes,
+  validateFormatsBin,
   makeGitignore,
   makeProxies,
   writePackageJson,
@@ -83,8 +85,9 @@ export async function buildCommand(options) {
     // Step 2: Validate and get source configuration
     console.log(chalk.gray('📝 Step 2: Analyzing project structure...'));
     const sourcePath = getSourcePath(packagePath);
-    const entry = getAllBuildFiles(sourcePath);
+    validateFormatsBin(packagePath);
     const builds = getPackageBuilds(packagePath);
+    const entry = getAllBuildFiles(sourcePath);
 
     if (verbose) {
       console.log(chalk.gray(`   Source path: ${sourcePath}`));
@@ -184,10 +187,16 @@ export async function buildCommand(options) {
       for (const [format, outDir] of Object.entries(builds)) {
         console.log(chalk.blue(`   Building ${format} format...`));
 
+        const formatEntry = getTsupEntryForFormat(
+          packagePath,
+          sourcePath,
+          /** @type {'cjs'|'esm'} */ (format),
+        );
+
         try {
           await build({
             ...tsupConfigOverrides[format],
-            entry,
+            entry: formatEntry,
             format: /** @type {import('tsup').Format} */ (format),
             outDir: path.join(packagePath, outDir),
             splitting: true,

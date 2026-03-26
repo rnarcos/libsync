@@ -48,6 +48,20 @@ export default {
   // Command-specific configuration
   commands: {
     build: {
+      // Output formats (optional). When `bin` is non-empty, libsync overwrites package.json `bin`
+      // from this list: each entry maps an npm command name to a source file under `source` and
+      // the output format (cjs or esm). Paths must exist relative to the source directory.
+      // Example: `libsync` CLI from src/cli/index.js as CommonJS, `my-tool` as ESM only:
+      // formats: {
+      //   cjs: 'cjs',
+      //   esm: 'esm',
+      //   types: true,
+      //   bin: [
+      //     { command: 'libsync', path: 'cli/index.js', format: 'cjs' },
+      //     { command: 'my-tool', path: 'other/cli.js', format: 'esm' },
+      //   ],
+      // },
+
       // Option 1: Universal tsup config (applied to all formats)
       tsup: {
         splitting: true,
