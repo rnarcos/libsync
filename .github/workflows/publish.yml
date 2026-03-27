@@ -92,8 +92,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Restore package.json to development mode
+        run: pnpm dev:package-json
+
       - name: Commit version updates
         run: |
           git add -A
-          git diff --staged --quiet || git commit -m "[skip ci] - Updating packages versions"
+          git diff --staged --quiet || git commit -m "[skip ci] - Post-release: version updates and development package.json"
           git push

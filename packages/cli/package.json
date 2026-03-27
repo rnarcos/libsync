@@ -24,6 +24,7 @@
     "build": "node src/cli/index.js build",
     "clean": "node src/cli/index.js clean",
     "dev": "concurrently --names \"dev-package-json,build\" --prefix-colors \"green,gray\" \"node src/cli/index.js package-json --mode development --watch\" \"node src/cli/index.js build --watch\"",
+    "dev:package-json": "node src/cli/index.js package-json --mode development",
     "dev:watch": "node src/cli/index.js package-json --watch",
     "format": "prettier --check \"src/**/*.{js,ts,json,md}\"",
     "format:fix": "prettier --write \"src/**/*.{js,ts,json,md}\"",

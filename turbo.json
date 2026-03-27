@@ -14,6 +14,10 @@
       "inputs": ["src/**"],
       "outputs": ["package.json"]
     },
+    "dev:package-json": {
+      "cache": false,
+      "outputs": ["package.json"]
+    },
     "format": {
       "outputs": ["node_modules/.cache/.prettiercache"],
       "outputLogs": "new-only"
