@@ -54,6 +54,31 @@ export class ConfigurationError extends Error {
 }
 
 /**
+ * Environment variable that, when truthy, freezes root package.json:
+ * build/clean skip every package.json write (see docs/build.md, docs/clean.md).
+ * @type {string}
+ */
+export const FREEZE_PACKAGE_JSON_ENV = 'LIBSYNC_FREEZE_PACKAGE_JSON';
+
+/**
+ * Whether root package.json writes should be skipped, based on
+ * `LIBSYNC_FREEZE_PACKAGE_JSON`. Truthy values are `1` or `true`
+ * (case-insensitive); anything else (incl. unset) is off.
+ *
+ * The `package-json` command is intentionally exempt — it never consults
+ * this flag, so an explicit invocation always writes.
+ * @returns {boolean} Whether package.json is frozen
+ */
+export function isPackageJsonFrozen() {
+  const value = process.env[FREEZE_PACKAGE_JSON_ENV];
+  if (!value) {
+    return false;
+  }
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true';
+}
+
+/**
  * Check if a path is a directory
  * @param {string} path - Path to check
  * @returns {boolean} Whether the path is a directory
