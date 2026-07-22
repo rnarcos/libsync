@@ -9,6 +9,8 @@ import { initConfig } from '../utils/config.js';
 import {
   cleanBuild,
   writePackageJson,
+  isPackageJsonFrozen,
+  FREEZE_PACKAGE_JSON_ENV,
   PackageError,
   ConfigurationError,
 } from '../utils/package.js';
@@ -33,15 +35,30 @@ export async function cleanCommand(options) {
 
   console.log(chalk.blue(`🧹 Cleaning build artifacts at: ${packagePath}`));
 
+  const frozen = isPackageJsonFrozen();
+
   try {
-    // Reset package.json to development mode (clean command should restore dev state)
-    writePackageJson(packagePath, 'development');
+    // Reset package.json to development mode (clean command should restore dev
+    // state) — unless frozen, in which case leave package.json untouched.
+    if (frozen) {
+      console.log(
+        chalk.gray(
+          `📌 ${FREEZE_PACKAGE_JSON_ENV} set — leaving package.json untouched`,
+        ),
+      );
+    } else {
+      writePackageJson(packagePath, 'development');
+    }
 
     cleanBuild(packagePath);
 
     if (verbose) {
       console.log(chalk.gray(`   Processed package at: ${packagePath}`));
-      console.log(chalk.gray(`   Reset package.json to development mode`));
+      if (frozen) {
+        console.log(chalk.gray(`   Skipped package.json reset (frozen)`));
+      } else {
+        console.log(chalk.gray(`   Reset package.json to development mode`));
+      }
       console.log(chalk.gray(`   Removed all build directories`));
     }
 

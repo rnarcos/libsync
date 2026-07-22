@@ -25,6 +25,8 @@ import {
   makeGitignore,
   makeProxies,
   writePackageJson,
+  isPackageJsonFrozen,
+  FREEZE_PACKAGE_JSON_ENV,
   PackageError,
   ConfigurationError,
 } from '../utils/package.js';
@@ -59,6 +61,17 @@ export async function buildCommand(options) {
   }
   if (watchMode) {
     console.log(chalk.blue('👀 Watch mode enabled - will rebuild on changes'));
+  }
+
+  // When frozen, build emits artifacts but leaves root package.json untouched
+  // (keeps Turbo remote cache warm — see docs/build.md).
+  const frozen = isPackageJsonFrozen();
+  if (frozen) {
+    console.log(
+      chalk.gray(
+        `📌 ${FREEZE_PACKAGE_JSON_ENV} set — leaving package.json untouched`,
+      ),
+    );
   }
 
   // Set production environment
@@ -142,36 +155,47 @@ export async function buildCommand(options) {
       makeGitignore(packagePath);
       makeProxies(packagePath, 'production-types');
 
-      console.log(
-        chalk.gray(
-          '📝 Step 7: Updating types fields in package.json (production-types mode)...',
-        ),
-      );
-      console.log(
-        chalk.blue(
-          '   → Preserving main/module/import/require, updating only types fields',
-        ),
-      );
-      try {
-        writePackageJson(packagePath, 'production-types');
-      } catch (finalError) {
-        console.error(
-          chalk.red(
-            '❌ Failed to update package.json types fields, reverting to dev mode...',
+      if (frozen) {
+        console.log(
+          chalk.gray(
+            '📝 Step 7: Skipping package.json types update (frozen)...',
           ),
         );
-        // Log the error before attempting recovery
-        logFatalError(finalError, 'Failed to update package.json types fields');
+      } else {
+        console.log(
+          chalk.gray(
+            '📝 Step 7: Updating types fields in package.json (production-types mode)...',
+          ),
+        );
+        console.log(
+          chalk.blue(
+            '   → Preserving main/module/import/require, updating only types fields',
+          ),
+        );
         try {
-          writePackageJson(packagePath, 'development');
-        } catch (revertError) {
-          logNonFatalError(
-            revertError,
-            '⚠️  Failed to revert package.json to dev mode',
-            verbose,
+          writePackageJson(packagePath, 'production-types');
+        } catch (finalError) {
+          console.error(
+            chalk.red(
+              '❌ Failed to update package.json types fields, reverting to dev mode...',
+            ),
           );
+          // Log the error before attempting recovery
+          logFatalError(
+            finalError,
+            'Failed to update package.json types fields',
+          );
+          try {
+            writePackageJson(packagePath, 'development');
+          } catch (revertError) {
+            logNonFatalError(
+              revertError,
+              '⚠️  Failed to revert package.json to dev mode',
+              verbose,
+            );
+          }
+          throw finalError;
         }
-        throw finalError;
       }
     } else {
       // Step 5: Load and apply tsup configuration
@@ -220,30 +244,38 @@ export async function buildCommand(options) {
       makeProxies(packagePath, 'production');
 
       // Step 8: Final step - Update package.json to production mode (only if everything succeeded)
-      console.log(
-        chalk.gray('📝 Step 8: Finalizing package.json for production...'),
-      );
-      try {
-        writePackageJson(packagePath, 'production');
-      } catch (finalError) {
-        // If final step fails, ensure package.json is in dev mode
-        console.error(
-          chalk.red(
-            '❌ Failed to finalize package.json, reverting to dev mode...',
+      if (frozen) {
+        console.log(
+          chalk.gray(
+            '📝 Step 8: Skipping package.json finalization (frozen)...',
           ),
         );
-        // Log the error before attempting recovery
-        logFatalError(finalError, 'Failed to finalize package.json');
+      } else {
+        console.log(
+          chalk.gray('📝 Step 8: Finalizing package.json for production...'),
+        );
         try {
-          writePackageJson(packagePath, 'development');
-        } catch (revertError) {
-          logNonFatalError(
-            revertError,
-            '⚠️  Failed to revert package.json to dev mode',
-            verbose,
+          writePackageJson(packagePath, 'production');
+        } catch (finalError) {
+          // If final step fails, ensure package.json is in dev mode
+          console.error(
+            chalk.red(
+              '❌ Failed to finalize package.json, reverting to dev mode...',
+            ),
           );
+          // Log the error before attempting recovery
+          logFatalError(finalError, 'Failed to finalize package.json');
+          try {
+            writePackageJson(packagePath, 'development');
+          } catch (revertError) {
+            logNonFatalError(
+              revertError,
+              '⚠️  Failed to revert package.json to dev mode',
+              verbose,
+            );
+          }
+          throw finalError;
         }
-        throw finalError;
       }
     }
 
@@ -256,18 +288,21 @@ export async function buildCommand(options) {
       console.log(chalk.green(`\n🎉 Build completed successfully!`));
     }
   } catch (error) {
-    // Ensure package.json is in dev mode if build fails at any step
-    try {
-      console.error(
-        chalk.yellow('🔄 Reverting package.json to development mode...'),
-      );
-      writePackageJson(packagePath, 'development');
-    } catch (revertError) {
-      logNonFatalError(
-        revertError,
-        '⚠️  Failed to revert package.json to dev mode',
-        verbose,
-      );
+    // Ensure package.json is in dev mode if build fails at any step — unless
+    // frozen, in which case no swap ever happened and there is nothing to undo.
+    if (!frozen) {
+      try {
+        console.error(
+          chalk.yellow('🔄 Reverting package.json to development mode...'),
+        );
+        writePackageJson(packagePath, 'development');
+      } catch (revertError) {
+        logNonFatalError(
+          revertError,
+          '⚠️  Failed to revert package.json to dev mode',
+          verbose,
+        );
+      }
     }
 
     if (error instanceof ConfigurationError) {

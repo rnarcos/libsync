@@ -18,6 +18,20 @@ libsync clean [options]
 
 The clean command removes all build artifacts, generated files, and temporary directories created during the build process. It's designed to restore your package to a clean development state.
 
+## Environment Variables
+
+### `LIBSYNC_FREEZE_PACKAGE_JSON`
+
+When set to a truthy value (`1` or `true`, case-insensitive), the clean command removes build artifacts as usual but **leaves the root `package.json` untouched** — the development-mode restoration described below is skipped.
+
+```bash
+LIBSYNC_FREEZE_PACKAGE_JSON=1 libsync clean
+```
+
+**Why:** In monorepos using Turbo remote caching, `package.json` is part of the hashed task inputs. Rewriting it on every clean/build busts the cache even when the published package contents are unchanged. Freezing `package.json` keeps the cache warm during development and CI runs.
+
+**Scope:** Only the root `package.json` is frozen. Build directories, proxy packages, and `.gitignore` entries are still cleaned normally. The explicit [`package-json`](./package-json.md) command is exempt from this flag and always writes.
+
 ## What It Cleans
 
 ### Build Directories

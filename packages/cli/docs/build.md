@@ -18,6 +18,22 @@ libsync build [options]
 
 The build command compiles your library using tsup, automatically managing package.json fields and generating proper exports for both development and production environments.
 
+## Environment Variables
+
+### `LIBSYNC_FREEZE_PACKAGE_JSON`
+
+When set to a truthy value (`1` or `true`, case-insensitive), the build command compiles and emits your `esm`/`cjs` artifacts as usual but **leaves the root `package.json` untouched** — the production swap in the final step is skipped, and so is the revert-to-development step on failure.
+
+```bash
+LIBSYNC_FREEZE_PACKAGE_JSON=1 libsync build
+```
+
+**Why:** In monorepos using Turbo remote caching, `package.json` is part of the hashed task inputs. Mutating it on every build (development → production paths) busts the cache even when the published package contents are unchanged. Freezing `package.json` keeps the cache warm during development and CI build runs.
+
+**Scope:** Only the root `package.json` is frozen. Compiled artifacts, proxy folders, and `.gitignore` are still generated normally.
+
+**Publishing:** To publish, run the build **without** this variable set — the production swap then happens as usual, updating `package.json` and the published artifacts. The explicit [`package-json`](./package-json.md) command is exempt from this flag and always writes.
+
 ## What It Does
 
 ### 1. Project Validation
