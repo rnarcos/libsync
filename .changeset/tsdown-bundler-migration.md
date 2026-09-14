@@ -8,6 +8,8 @@ This is the structural fix for the "`import.meta` survives in CJS output" bug cl
 
 Breaking changes:
 
+- Node.js >= 22.18.0 is required (tsdown's engine range: `^22.18.0 || ^24.11.0 || >=26.0.0`); Node 18/20 are no longer supported.
+
 - Bundler configuration lives exclusively in `libsync.config.mjs` under the new bundler-agnostic key `commands.build.bundler` (object, or `({ type }) => config` function per format). `commands.build.tsup` was removed and now fails config validation with a clear message.
 - Standalone bundler config files are no longer read: `tsup.config.{js,mjs}` and `tsdown.config.{js,mjs}` are ignored (a warning is printed if one is present).
 - Options are passed to tsdown, so esbuild-specific settings (`splitting`, `esbuildOptions`, `loader`) have no effect — code splitting is native and chunk naming is controlled by libsync.

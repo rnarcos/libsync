@@ -14,6 +14,9 @@
     "directory": "packages/cli"
   },
   "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
   "bin": {
     "libsync": "./src/cli/index.js"
   },
