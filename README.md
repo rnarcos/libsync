@@ -1,14 +1,14 @@
 # 🔧 libsync
 
-A comprehensive CLI tool and monorepo for library maintainers using [tsup](https://tsup.egoist.dev/). This project provides both the CLI tooling and example implementations to help you build, maintain, and distribute high-quality JavaScript and TypeScript libraries.
+A comprehensive CLI tool and monorepo for library maintainers using [tsdown](https://tsdown.dev/). This project provides both the CLI tooling and example implementations to help you build, maintain, and distribute high-quality JavaScript and TypeScript libraries.
 
 ## ✨ Features
 
-- **🔨 Build Command**: Build libraries with dual ESM/CJS output using tsup
+- **🔨 Build Command**: Build libraries with dual ESM/CJS output using tsdown
 - **🧹 Clean Command**: Remove build artifacts and reset to development mode
 - **📦 Dev Command**: Generate development package.json files for monorepos
 - **🎯 Type-Safe**: Built with JavaScript + JSDoc for full TypeScript experience
-- **⚡ Fast**: Powered by tsup and esbuild for lightning-fast builds
+- **⚡ Fast**: Powered by tsdown and Rolldown for lightning-fast builds
 - **🔄 Watch Mode**: Real-time rebuilding during development
 - **📋 Validation**: Comprehensive project structure and configuration validation
 - **🏗️ Examples**: Complete recipe examples for different library types
@@ -68,7 +68,7 @@ libsync/
 
 ### `libsync build`
 
-Build a library package using tsup with dual ESM/CJS output.
+Build a library package using tsdown with dual ESM/CJS output.
 
 ```bash
 libsync build [options]
@@ -224,20 +224,19 @@ export default {
 
 **files** - File pattern configuration
 - `extensions` (default: `['.js', '.jsx', '.ts', '.tsx', '.cjs', '.mjs', '.cts', '.mts']`) - Recognized file extensions for source files and index files
-- `ignoreBuildPaths` (default: `['**/*.test.*', '**/*.spec.*', '**/__tests__/**']`) - Paths to completely ignore during build. Files matching these patterns won't be compiled by TypeScript/tsup, won't have proxy packages generated, and won't be included in the exports map. **Patterns are relative to source directory** (e.g., `'index.*'`, `'utils/helper.ts'`). The `src/` prefix is automatically stripped if present.
-- `ignoreExportPaths` (default: `[]`) - Paths to ignore only for exports. Files matching these patterns will still be compiled by TypeScript/tsup, but won't have proxy packages generated and won't be included in the exports map. **Useful for CLI-only packages**: Use `'index.*'` to build the index but remove the `"."` export and `main`/`module`/`types` fields. Use `'commands/**'` to build CLI commands without exporting them as library imports.
+- `ignoreBuildPaths` (default: `['**/*.test.*', '**/*.spec.*', '**/__tests__/**']`) - Paths to completely ignore during build. Files matching these patterns won't be compiled by TypeScript/tsdown, won't have proxy packages generated, and won't be included in the exports map. **Patterns are relative to source directory** (e.g., `'index.*'`, `'utils/helper.ts'`). The `src/` prefix is automatically stripped if present.
+- `ignoreExportPaths` (default: `[]`) - Paths to ignore only for exports. Files matching these patterns will still be compiled by TypeScript/tsdown, but won't have proxy packages generated and won't be included in the exports map. **Useful for CLI-only packages**: Use `'index.*'` to build the index but remove the `"."` export and `main`/`module`/`types` fields. Use `'commands/**'` to build CLI commands without exporting them as library imports.
 
 **commands.build** - Build command configuration
 
-**commands.build.tsup** - tsup build configuration
+**commands.build.bundler** - bundler (tsdown) configuration
 
 Option 1: Universal configuration (applies to all formats)
 ```javascript
 export default {
   commands: {
     build: {
-      tsup: {
-        splitting: true,
+      bundler: {
         treeshake: true,
         minify: true,
       },
@@ -246,16 +245,14 @@ export default {
 };
 ```
 
-Option 2: Format-specific configuration
+Option 2: Format-specific configuration (function receives the current format)
 ```javascript
 export default {
   commands: {
     build: {
-      tsup: {
-        default: { splitting: true }, // Fallback for all formats
-        esm: { format: 'esm', splitting: true }, // ESM-specific
-        cjs: { format: 'cjs', splitting: false }, // CJS-specific
-      },
+      bundler: ({ type }) => ({
+        minify: type === 'esm',
+      }),
     },
   },
 };
@@ -282,52 +279,29 @@ export default config;
 
 `libsync` respects the following priority for build configuration:
 
-1. **libsync.config.mjs** (`commands.build.tsup`) - Highest priority
-2. **tsup.config.mjs** / **tsup.config.js** - Backward compatibility
-3. **Default settings** - Built-in defaults
+1. **libsync.config.mjs** (`commands.build.bundler`) - Only configuration source
+2. **Default settings** - Built-in defaults
 
-This ensures backward compatibility with existing `tsup.config.mjs` files while providing a centralized configuration approach.
+Standalone bundler config files (`tsup.config.*`, `tsdown.config.*`) are **not** read — if one is present it is ignored with a warning.
 
 #### Migration from tsup.config.mjs
 
-If you have an existing `tsup.config.mjs`:
+If you have an existing `tsup.config.mjs`, move its options into `libsync.config.mjs` under `commands.build.bundler` and drop esbuild-specific options (`splitting`, `esbuildOptions`, `loader`) — code splitting is native in tsdown and JSON sources are copied to the output as-is:
 
-**Before:**
-```javascript
-// tsup.config.mjs
-export default {
-  splitting: true,
-  treeshake: true,
-};
-
-export const esm = {
-  format: 'esm',
-  splitting: true,
-};
-
-export const cjs = {
-  format: 'cjs',
-  splitting: false,
-};
-```
-
-**After:**
 ```javascript
 // libsync.config.mjs
 export default {
   commands: {
     build: {
-      tsup: {
-        default: { splitting: true, treeshake: true },
-        esm: { format: 'esm', splitting: true },
-        cjs: { format: 'cjs', splitting: false },
+      bundler: {
+        treeshake: true,
       },
+      // Per-format overrides via the function form:
+      // bundler: ({ type }) => ({ minify: type === 'esm' }),
     },
   },
 };
 ```
-
-You can keep using `tsup.config.mjs` if preferred - both approaches work, but `libsync.config.mjs` takes precedence.
 
 #### Complete Example
 
@@ -375,20 +349,23 @@ Recommended `tsconfig.json` for JavaScript projects:
 
 ### Build Configuration
 
-Example `tsup.config.js`:
+Example bundler options in `libsync.config.mjs`:
 
 ```javascript
 export default {
-  entry: ['src/index.js'],
-  format: ['esm', 'cjs'],
-  target: 'node18',
-  splitting: true,
-  sourcemap: true,
-  clean: false,
-  dts: false, // Handled by TypeScript
-  external: ['dependency-name'],
+  commands: {
+    build: {
+      bundler: {
+        target: 'node18',
+        sourcemap: true,
+        external: ['dependency-name'],
+      },
+    },
+  },
 };
 ```
+
+Note: `entry`, `format`, `outDir`, `clean`, and `dts` are always controlled by libsync and cannot be overridden.
 
 ## 🔍 Validation & Error Handling
 
@@ -474,7 +451,7 @@ This library was heavily inspired by the excellent open source work of **[Diego 
 ## 🙏 Acknowledgments
 
 - [Diego Haz](https://github.com/diegohaz) - Original inspiration for build/publish workflows
-- [tsup](https://tsup.egoist.dev/) - The fast TypeScript bundler
+- [tsdown](https://tsdown.dev/) - The elegant bundler for libraries, powered by Rolldown
 - [Commander.js](https://github.com/tj/commander.js/) - Command-line interface framework
 - [Zod](https://zod.dev/) - TypeScript-first schema validation
 - [Turborepo](https://turbo.build/) - High-performance build system

@@ -47,6 +47,7 @@
     "@libsync/eslint-config": "workspace:*",
     "@libsync/prettier-config": "workspace:*",
     "@libsync/tailwind-config": "workspace:*",
+    "@libsync/typescript-config": "workspace:*",
     "@storybook/addon-essentials": "^8.6.2",
     "@storybook/addon-interactions": "^8.6.2",
     "@storybook/addon-onboarding": "^8.6.2",

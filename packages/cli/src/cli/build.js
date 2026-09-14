@@ -7,9 +7,10 @@ import { mkdir, rm } from 'fs/promises';
 import path from 'path';
 
 import chalk from 'chalk';
+import chokidar from 'chokidar';
 import spawn from 'cross-spawn';
 import fse from 'fs-extra';
-import { build } from 'tsup';
+import { build } from 'tsdown';
 
 import { getConfig, initConfig } from '../utils/config.js';
 import { logFatalError, logNonFatalError } from '../utils/error-logging.js';
@@ -149,7 +150,7 @@ export async function buildCommand(options) {
     // For types-only mode, skip tsup bundling but update types fields in package.json
     if (typesOnly) {
       console.log(
-        chalk.gray('📝 Step 5: Skipping tsup bundling (types-only mode)'),
+        chalk.gray('📝 Step 5: Skipping tsdown bundling (types-only mode)'),
       );
       console.log(chalk.gray('📝 Step 6: Generating package metadata...'));
       makeGitignore(packagePath);
@@ -198,16 +199,15 @@ export async function buildCommand(options) {
         }
       }
     } else {
-      // Step 5: Load and apply tsup configuration
+      // Step 5: Load and apply bundler configuration
       console.log(chalk.gray('📝 Step 5: Loading build configuration...'));
-      const tsupConfigOverrides = await loadTsupConfiguration(
+      const bundlerConfigOverrides = loadBundlerConfiguration(
         packagePath,
         builds,
-        verbose,
       );
 
-      // Step 6: Run tsup builds for each format
-      console.log(chalk.gray('📝 Step 6: Building with tsup...'));
+      // Step 6: Run tsdown builds for each format
+      console.log(chalk.gray('📝 Step 6: Building with tsdown...'));
       for (const [format, outDir] of Object.entries(builds)) {
         console.log(chalk.blue(`   Building ${format} format...`));
 
@@ -217,18 +217,132 @@ export async function buildCommand(options) {
           /** @type {'cjs'|'esm'} */ (format),
         );
 
+        // JSON sources are copied as-is instead of bundled: consumers may
+        // reference them directly (e.g. tsconfig `extends` pointing at a
+        // shared config), which requires raw .json files in the output.
+        /** @type {Record<string, string>} */
+        const bundleEntry = {};
+        /** @type {Record<string, string>} */
+        const jsonEntry = {};
+        for (const [entryKey, entryPath] of Object.entries(formatEntry)) {
+          if (entryPath.endsWith('.json')) {
+            jsonEntry[entryKey] = entryPath;
+          } else {
+            bundleEntry[entryKey] = entryPath;
+          }
+        }
+
+        /** @type {Map<string, string>} */
+        const jsonDestinations = new Map();
+        for (const [entryKey, entryPath] of Object.entries(jsonEntry)) {
+          const destination = path.join(
+            packagePath,
+            outDir,
+            `${entryKey}.json`,
+          );
+          fse.copySync(entryPath, destination);
+          jsonDestinations.set(path.resolve(entryPath), destination);
+          if (verbose) {
+            console.log(
+              chalk.gray(`   Copied JSON: ${entryKey}.json → ${outDir}/`),
+            );
+          }
+        }
+
+        // The bundler doesn't watch copied JSON sources — re-copy on change
+        // ourselves. The watcher also keeps the process alive for
+        // JSON-only formats, where no bundler watcher exists.
+        if (watchMode && jsonDestinations.size > 0) {
+          chokidar
+            .watch([...jsonDestinations.keys()])
+            .on('change', (changedPath) => {
+              const destination = jsonDestinations.get(
+                path.resolve(changedPath),
+              );
+              if (!destination) {
+                return;
+              }
+              try {
+                fse.copySync(changedPath, destination);
+                console.log(
+                  chalk.gray(
+                    `   Re-copied JSON: ${path.relative(packagePath, changedPath)}`,
+                  ),
+                );
+              } catch (error) {
+                logNonFatalError(
+                  error,
+                  `Failed to re-copy JSON: ${changedPath}`,
+                  verbose,
+                );
+              }
+            });
+        }
+
+        if (Object.keys(bundleEntry).length === 0) {
+          console.log(
+            chalk.green(`   ✅ ${format} build completed (JSON only)`),
+          );
+          continue;
+        }
+
+        // Chunks must use the same extension convention as entries:
+        // consumer packages are `"type": "module"`, so a `.js` chunk would be
+        // parsed as ESM when required from CJS output.
+        const jsExtension = format === 'cjs' ? '.cjs' : '.js';
+
         try {
+          // In watch mode tsdown resolves before the initial build finishes
+          // writing outputs, but later steps (package.json finalization)
+          // need them on disk — so block on the first `build:done`.
+          /** @type {(() => void) | undefined} */
+          let resolveInitialBuild;
+          const initialBuild = new Promise((resolve) => {
+            resolveInitialBuild = () => resolve(undefined);
+          });
+
+          const overrides = bundlerConfigOverrides[format] || {};
+          // Merge (rather than replace) user outputOptions/hooks when they
+          // are plain objects; the function forms can't be merged and are
+          // superseded by libsync's own values.
+          const userOutputOptions =
+            typeof overrides.outputOptions === 'object'
+              ? overrides.outputOptions
+              : undefined;
+          const userHooks =
+            typeof overrides.hooks === 'object' ? overrides.hooks : undefined;
+
           await build({
-            ...tsupConfigOverrides[format],
-            entry: formatEntry,
-            format: /** @type {import('tsup').Format} */ (format),
+            ...overrides,
+            entry: bundleEntry,
+            format: /** @type {'cjs'|'esm'} */ (format),
             outDir: path.join(packagePath, outDir),
-            splitting: true,
             watch: watchMode,
-            esbuildOptions(options) {
-              options.chunkNames = '__chunks/[hash]';
+            // libsync owns cleaning (step 1) and tsc has already emitted
+            // .d.ts files into outDir (step 4) — tsdown must not wipe them.
+            clean: false,
+            // Types come from the tsc step, never from tsdown.
+            dts: false,
+            // Don't auto-discover tsdown.config files; libsync passes the
+            // resolved configuration explicitly.
+            config: false,
+            outExtensions: () => ({ js: jsExtension }),
+            outputOptions: {
+              ...userOutputOptions,
+              chunkFileNames: `__chunks/[hash]${jsExtension}`,
+            },
+            hooks: {
+              ...userHooks,
+              'build:done': async (ctx) => {
+                await userHooks?.['build:done']?.(ctx);
+                resolveInitialBuild?.();
+              },
             },
           });
+
+          if (watchMode) {
+            await initialBuild;
+          }
 
           console.log(chalk.green(`   ✅ ${format} build completed`));
         } catch (error) {
@@ -579,30 +693,47 @@ async function runTypeScriptCompilation(
 }
 
 /**
- * Load tsup configuration with error handling
+ * Load bundler (tsdown) configuration from libsync.config.mjs.
+ * Standalone bundler config files (tsup.config.*, tsdown.config.*) are not
+ * read — libsync.config.mjs `commands.build.bundler` is the only source.
  * @param {string} packagePath - Package path
  * @param {Record<string, string>} builds - Build configurations
- * @param {boolean} verbose - Enable verbose logging
- * @returns {Promise<Record<string, any>>} Tsup configuration overrides
+ * @returns {Record<string, any>} Tsdown configuration overrides per format
  */
-async function loadTsupConfiguration(packagePath, builds, verbose) {
+function loadBundlerConfiguration(packagePath, builds) {
   const config = getConfig();
 
-  // Priority 1: libsync.config.mjs commands.build.tsup
-  if (config?.commands?.build?.tsup) {
+  // Surface leftover standalone config files so their silence isn't mistaken
+  // for them being applied.
+  const ignoredConfigFile = [
+    'tsdown.config.js',
+    'tsdown.config.mjs',
+    'tsup.config.js',
+    'tsup.config.mjs',
+  ].find((fileName) => fse.existsSync(path.join(packagePath, fileName)));
+
+  if (ignoredConfigFile) {
+    console.warn(
+      chalk.yellow(
+        `   ⚠️  ${ignoredConfigFile} is ignored — move bundler options to commands.build.bundler in libsync.config.mjs`,
+      ),
+    );
+  }
+
+  const inlineConfig = config?.commands?.build?.bundler;
+
+  if (inlineConfig) {
     console.log(
-      chalk.gray('   Loading tsup config from libsync.config.mjs...'),
+      chalk.gray('   Loading bundler config from libsync.config.mjs...'),
     );
 
-    const tsupConfig = config.commands.build.tsup;
-
     // Check if it's a function
-    if (typeof tsupConfig === 'function') {
+    if (typeof inlineConfig === 'function') {
       // Function format: (options) => config
       return Object.keys(builds).reduce(
         (acc, format) => ({
           ...acc,
-          [format]: tsupConfig({ type: /** @type {'esm'|'cjs'} */ (format) }),
+          [format]: inlineConfig({ type: /** @type {'esm'|'cjs'} */ (format) }),
         }),
         /** @type {Record<string, any>} */ ({}),
       );
@@ -611,53 +742,14 @@ async function loadTsupConfiguration(packagePath, builds, verbose) {
       return Object.keys(builds).reduce(
         (acc, format) => ({
           ...acc,
-          [format]: tsupConfig,
+          [format]: inlineConfig,
         }),
         /** @type {Record<string, any>} */ ({}),
       );
     }
   }
 
-  // Priority 2: Backward compatibility with tsup.config.{js,mjs}
-  const tsupConfigPaths = [
-    path.join(packagePath, 'tsup.config.js'),
-    path.join(packagePath, 'tsup.config.mjs'),
-  ];
-
-  const tsupConfigPath = tsupConfigPaths.find((p) => fse.existsSync(p));
-
-  if (tsupConfigPath) {
-    const configFileName = path.basename(tsupConfigPath);
-    console.log(chalk.gray(`   Loading ${configFileName}...`));
-
-    try {
-      const configModule = await import(tsupConfigPath);
-      const defaultOverride = configModule.default;
-
-      if (verbose && defaultOverride) {
-        console.log(chalk.gray('   Found custom tsup configuration'));
-      }
-
-      return Object.keys(builds).reduce((acc, format) => {
-        const formatOverride = configModule[format];
-        return {
-          ...acc,
-          [format]: formatOverride || defaultOverride,
-        };
-      }, /** @type {Record<string, any>} */ ({}));
-    } catch (error) {
-      console.warn(
-        chalk.yellow(
-          `   Warning: Could not load ${configFileName}: ${error instanceof Error ? error.message : String(error)}`,
-        ),
-      );
-      console.warn(chalk.yellow('   Falling back to default configuration'));
-    }
-  } else {
-    console.log(chalk.gray('   Using default tsup configuration'));
-  }
-
-  // Priority 3: No config - use defaults
+  console.log(chalk.gray('   Using default tsdown configuration'));
   return Object.keys(builds).reduce(
     (acc, format) => ({
       ...acc,

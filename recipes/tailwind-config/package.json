@@ -40,6 +40,7 @@
   "devDependencies": {
     "@libsync/eslint-config": "workspace:*",
     "@libsync/prettier-config": "workspace:*",
+    "@libsync/typescript-config": "workspace:*",
     "@types/node": "^20.11.0",
     "eslint": "^8.57.0",
     "libsync": "workspace:*",

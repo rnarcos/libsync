@@ -1,6 +1,6 @@
 # Build Command
 
-Build library packages using tsup with intelligent configuration and package.json management.
+Build library packages using tsdown with intelligent configuration and package.json management.
 
 ## Usage
 
@@ -16,7 +16,7 @@ libsync build [options]
 
 ## Description
 
-The build command compiles your library using tsup, automatically managing package.json fields and generating proper exports for both development and production environments.
+The build command compiles your library using tsdown, automatically managing package.json fields and generating proper exports for both development and production environments.
 
 ## Environment Variables
 
@@ -172,36 +172,40 @@ Files specified in the `bin` field are automatically excluded from exports:
 
 ## Build Configuration
 
-### Default Tsup Configuration
+### Default Tsdown Configuration
 
-If no tsup.config.js is found, uses sensible defaults:
+For each format (cjs, esm) libsync runs tsdown with:
 
 ```javascript
 {
-  entry: ['src/**/*.{ts,js}'], // All source files
-  format: ['cjs', 'esm'],      // Dual format
-  dts: true,                   // Generate declarations
-  splitting: true,             // Code splitting
-  sourcemap: true,             // Source maps
-  clean: false,                // Handled by CLI
-  outDir: 'dist'              // Temporary, moved to cjs/esm
+  entry: {...},                // All source files (JSON sources are copied as-is instead)
+  format: 'cjs' | 'esm',       // One build per format
+  outDir: 'cjs' | 'esm',       // Per-format output directory
+  clean: false,                // Handled by the CLI
+  dts: false,                  // Declarations come from the tsc step
+  config: false,               // No tsdown config auto-discovery
+  outExtensions: ...,          // .cjs for cjs, .js for esm
+  outputOptions: { chunkFileNames: '__chunks/[hash].cjs' | '__chunks/[hash].js' },
 }
 ```
 
+`entry`, `format`, `outDir`, `watch`, `clean`, `dts`, and `config` are always controlled by libsync and cannot be overridden.
+
 ### Custom Configuration
 
-You can override defaults with tsup.config.js:
+You can pass extra tsdown options via `commands.build.bundler` in `libsync.config.mjs` (standalone `tsdown.config.*` / `tsup.config.*` files are ignored):
 
 ```javascript
 export default {
-  entry: ['src/index.ts'],
-  format: ['esm'], // ESM only
-  dts: true,
-  external: ['react'], // External dependencies
-  esbuildOptions(options) {
-    options.banner = {
-      js: '"use client";', // React Server Components
-    };
+  commands: {
+    build: {
+      bundler: {
+        external: ['react'], // External dependencies
+        outputOptions: {
+          banner: '"use client";', // React Server Components
+        },
+      },
+    },
   },
 };
 ```
@@ -271,4 +275,4 @@ libsync build --verbose
 
 - Use `--skip-validation` in CI environments
 - Ensure tsconfig.build.json excludes test files
-- Consider using `external` in tsup.config.js for large dependencies
+- Consider using `external` in `commands.build.bundler` for large dependencies

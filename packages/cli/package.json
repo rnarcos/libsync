@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "libsync",
-  "description": "A CLI tool for library maintainers using tsup - build, develop, and publish with ease",
+  "description": "A CLI tool for library maintainers using tsdown - build, develop, and publish with ease",
   "version": "1.0.15",
   "license": "MIT",
   "author": {
@@ -43,7 +43,7 @@
     "glob": "^10.3.10",
     "minimatch": "^9.0.5",
     "rimraf": "^5.0.5",
-    "tsup": "^8.0.0",
+    "tsdown": "^0.23.0",
     "verdaccio": "^6.2.1",
     "zod": "^3.22.4"
   },

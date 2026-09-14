@@ -4,7 +4,12 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "package.json", "tsconfig*.json", "tsup.config.*"],
+      "inputs": [
+        "src/**",
+        "package.json",
+        "tsconfig*.json",
+        "libsync.config.mjs"
+      ],
       "outputs": ["cjs/**", "esm/**", "bin/**", ".gitignore"],
       "env": ["CI"]
     },
@@ -33,7 +38,12 @@
     },
     "publish:staging": {
       "cache": false,
-      "inputs": ["src/**", "package.json", "tsconfig*.json", "tsup.config.*"],
+      "inputs": [
+        "src/**",
+        "package.json",
+        "tsconfig*.json",
+        "libsync.config.mjs"
+      ],
       "env": ["CI"]
     }
   }
