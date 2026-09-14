@@ -5,8 +5,21 @@
 
 import { z } from 'zod';
 
-// Tsup config accepts any object (we don't validate tsup's internal schema)
-const tsupConfigSchema = z.record(z.any());
+// Bundler config accepts any object (we don't validate tsdown's internal schema)
+const bundlerConfigSchema = z.record(z.any());
+
+// Bundler configuration can be:
+// 1. An object applied to all formats: { minify: true }
+// 2. A function that receives {type: 'esm'|'cjs'} and returns config
+const bundlerConfigUnion = z
+  .union([
+    bundlerConfigSchema,
+    z.function(
+      z.tuple([z.object({ type: z.enum(['esm', 'cjs']) })]),
+      bundlerConfigSchema,
+    ),
+  ])
+  .optional();
 
 export const libsyncConfigSchema = z
   .object({
@@ -45,11 +58,11 @@ export const libsyncConfigSchema = z
             '.mts',
             '.json',
           ]),
-        // Paths to completely ignore during build (won't be compiled by tsc/tsup, no proxies, no exports)
+        // Paths to completely ignore during build (won't be compiled by tsc/tsdown, no proxies, no exports)
         ignoreBuildPaths: z
           .array(z.string())
           .default(['**/*.test.*', '**/*.spec.*', '**/__tests__/**']),
-        // Paths to ignore only for exports (still built by tsc/tsup, but no proxies or exports)
+        // Paths to ignore only for exports (still built by tsc/tsdown, but no proxies or exports)
         // Useful for CLI commands that should be built but not exported as library imports
         ignoreExportPaths: z.array(z.string()).default([]),
         // Whether to write build artifacts and proxies to .gitignore
@@ -83,17 +96,16 @@ export const libsyncConfigSchema = z
                   .optional(),
               })
               .default({}),
-            // Tsup configuration can be:
-            // 1. An object applied to all formats: { splitting: true }
-            // 2. A function that receives {type: 'esm'|'cjs'} and returns config
+            // Bundler (tsdown) configuration (see bundlerConfigUnion above)
+            bundler: bundlerConfigUnion,
+            // Removed in favor of `bundler` — reject with a clear message
+            // instead of silently ignoring a leftover key.
             tsup: z
-              .union([
-                tsupConfigSchema,
-                z.function(
-                  z.tuple([z.object({ type: z.enum(['esm', 'cjs']) })]),
-                  tsupConfigSchema,
-                ),
-              ])
+              .any()
+              .refine((value) => value === undefined, {
+                message:
+                  'commands.build.tsup was removed — use commands.build.bundler',
+              })
               .optional(),
           })
           .default({}),

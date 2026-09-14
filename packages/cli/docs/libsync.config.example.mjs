@@ -33,7 +33,7 @@ export default {
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.cjs', '.mjs', '.cts', '.mts'],
 
     // Paths to completely ignore during build
-    // These files won't be compiled by tsc/tsup, won't have proxies, and won't be in exports
+    // These files won't be compiled by tsc/tsdown, won't have proxies, and won't be in exports
     // Patterns are relative to source directory (src/ prefix is automatically stripped)
     // Examples: 'index.*', '**/*.test.*', 'commands/**', 'src/utils/internal.ts'
     ignoreBuildPaths: ['**/*.test.*', '**/*.spec.*', '**/__tests__/**'],
@@ -62,19 +62,16 @@ export default {
       //   ],
       // },
 
-      // Option 1: Universal tsup config (applied to all formats)
-      tsup: {
-        splitting: true,
+      // Option 1: Universal bundler (tsdown) config (applied to all formats)
+      bundler: {
         treeshake: true,
         minify: true,
       },
 
-      // Option 2: Format-specific tsup config
-      // tsup: {
-      //   default: { splitting: true },           // Fallback for all formats
-      //   esm: { format: 'esm', splitting: true }, // ESM-specific
-      //   cjs: { format: 'cjs', splitting: false }, // CJS-specific
-      // },
+      // Option 2: Format-specific bundler config (function receives the format)
+      // bundler: ({ type }) => ({
+      //   minify: type === 'esm',
+      // }),
     },
   },
 };

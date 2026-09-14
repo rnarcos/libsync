@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@libsync/root",
-  "description": "A CLI tool and examples for library maintainers using tsup",
+  "description": "A CLI tool and examples for library maintainers using tsdown",
   "version": "1.0.0",
   "license": "MIT",
   "author": {

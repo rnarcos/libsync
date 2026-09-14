@@ -33,7 +33,7 @@ export async function loadLibsyncConfig(packagePath) {
   try {
     // Convert to file URL for proper ESM import in both CJS and ESM contexts
     const configUrl = pathToFileURL(configPath).href;
-    // Use indirect eval to prevent tsup from transforming the dynamic import
+    // Use indirect eval to prevent the bundler from transforming the dynamic import
     const dynamicImport = new Function('specifier', 'return import(specifier)');
     const configModule = await dynamicImport(configUrl);
     const userConfig = configModule.default || configModule;

@@ -24,13 +24,13 @@ displayWelcomeMessage();
 
 program
   .name('libsync')
-  .description('CLI tool for library maintainers using tsup')
+  .description('CLI tool for library maintainers using tsdown')
   .version('1.0.0')
   .option('--verbose', 'Enable verbose logging', false);
 
 program
   .command('build')
-  .description('Build a library package using tsup')
+  .description('Build a library package using tsdown')
   .option('-p, --path <path>', 'Package path to build', process.cwd())
   .option('-w, --watch', 'Watch for file changes and rebuild', false)
   .option(

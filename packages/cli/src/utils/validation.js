@@ -22,7 +22,9 @@ import { readPackageJson } from './package.js';
  */
 export function displayWelcomeMessage() {
   console.log(chalk.blue('🔧 libsync'));
-  console.log(chalk.gray('   A CLI tool for library maintainers using tsup\n'));
+  console.log(
+    chalk.gray('   A CLI tool for library maintainers using tsdown\n'),
+  );
 }
 
 /**

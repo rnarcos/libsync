@@ -1,6 +1,6 @@
 # libsync Documentation
 
-A comprehensive CLI tool for library maintainers using tsup for building modern JavaScript and TypeScript libraries.
+A comprehensive CLI tool for library maintainers using tsdown for building modern JavaScript and TypeScript libraries.
 
 ## Overview
 
@@ -8,7 +8,7 @@ The `libsync` provides a complete toolkit for library development, including bui
 
 ## Commands
 
-- **[build](./build.md)** - Build library packages using tsup with intelligent configuration
+- **[build](./build.md)** - Build library packages using tsdown with intelligent configuration
 - **[clean](./clean.md)** - Clean build artifacts and generated files
 - **[publish:staging](./publish-staging.md)** - Staging deployment with Verdaccio integration
 
