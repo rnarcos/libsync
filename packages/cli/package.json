@@ -2,7 +2,7 @@
   "private": false,
   "name": "libsync",
   "description": "A CLI tool for library maintainers using tsdown - build, develop, and publish with ease",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "license": "MIT",
   "author": {
     "name": "Marcos Fernandes",
